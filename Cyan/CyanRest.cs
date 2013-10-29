@@ -4,33 +4,50 @@ using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Threading;
+using Cyan.Interfaces;
+using Cyan.Policies;
 
 namespace Cyan
 {
     [DebuggerDisplay("CyanRest({accountName})")]
-    public class CyanRest
+    public class CyanRest : ICyanRest
     {
-        public CyanRest(string accountName, string accountSecret, bool useSsl = false, CyanRetryPolicy retryPolicy = null)
+        private readonly CyanAccount _account;
+
+        public CyanRest(string accountName, string accountSecret, bool useSsl = false,
+            CyanRetryPolicy retryPolicy = null)
         {
             UseSsl = useSsl;
             RetryPolicy = retryPolicy ?? CyanRetryPolicy.Default;
 
-            account = new CyanAccount(accountName, accountSecret);
+            _account = new CyanAccount(accountName, accountSecret);
         }
 
-        CyanAccount account;
+        /// <summary>
+        /// Returns the current time formatted for the storage requests.
+        /// </summary>
+        private static string XMsDate
+        {
+            get { return DateTime.UtcNow.ToString("R", System.Globalization.CultureInfo.InvariantCulture); }
+        }
 
         public bool UseSsl { get; private set; }
 
-        public string AccountName { get { return account.Name; } }
+        public string AccountName
+        {
+            get { return _account.Name; }
+        }
 
-        public bool IsDevelopmentStorage { get { return AccountName == CyanClient.developmentStorageAccount; } }
+        public bool IsDevelopmentStorage
+        {
+            get { return AccountName == CyanClient.DevelopmentStorageAccount; }
+        }
 
         public CyanRetryPolicy RetryPolicy { get; private set; }
 
         public CyanRestResponse GetRequest(string resource, string query = null)
         {
-            return Request("GET", resource, query: query);
+            return Request("GET", resource, query);
         }
 
         public CyanRestResponse PostRequest(string resource, string content)
@@ -63,10 +80,33 @@ namespace Cyan
             return CyanBatchResponse.Parse(response);
         }
 
-        CyanRestResponse Request(string method,
+        public string FormatUrl(string resource, string query = null)
+        {
+            if (IsDevelopmentStorage)
+            {
+                // development storage url http://127.0.0.1:10002/devstoreaccount1/{resource}?{query}
+                var url = string.Format("http://127.0.0.1:10002/{0}/{1}", AccountName, resource);
+                if (!string.IsNullOrEmpty(query))
+                    url = string.Join("?", url, query);
+
+                return url;
+            }
+            else
+            {
+                // table storage {protocol}://{account}.table.core.windows.net/{resource}?{query}
+                var protocol = UseSsl ? "https" : "http";
+
+                var url = string.Format("{0}://{1}.table.core.windows.net/{2}", protocol, AccountName, resource);
+                if (!string.IsNullOrEmpty(query))
+                    url = string.Join("?", url, query);
+
+                return url;
+            }
+        }
+
+        private CyanRestResponse Request(string method,
             string resource,
             string query = null,
-            string versionHeader = null,
             string contentType = null,
             string content = null,
             byte[] contentBytes = null,
@@ -82,12 +122,8 @@ namespace Cyan
                 try
                 {
                     using (var response = GetResponse(method,
-                        resource,
-                        query: query,
-                        contentType: contentType,
-                        content: content,
-                        contentBytes: contentBytes,
-                        ifMatch: ifMatch))
+                        resource, query, contentType, content, contentBytes, ifMatch
+                        ))
                         ret = CyanRestResponse.Parse(response);
                 }
                 catch (Exception ex)
@@ -115,7 +151,7 @@ namespace Cyan
             return ret;
         }
 
-        HttpWebResponse GetResponse(string method,
+        private HttpWebResponse GetResponse(string method,
             string resource,
             string query = null,
             string contentType = null,
@@ -131,7 +167,7 @@ namespace Cyan
                 contentBytes = !string.IsNullOrEmpty(content) ? Encoding.UTF8.GetBytes(content) : null;
             }
 
-            var request = (HttpWebRequest)WebRequest.Create(url);
+            var request = (HttpWebRequest) WebRequest.Create(url);
             request.Method = method;
 
             // required headers
@@ -145,7 +181,7 @@ namespace Cyan
                 request.Headers.Add("If-Match", ifMatch);
 
             // sign the request
-            account.Sign(request);
+            _account.Sign(request);
 
             try
             {
@@ -158,7 +194,7 @@ namespace Cyan
                         requestStream.Write(contentBytes, 0, contentBytes.Length);
                 }
 
-                return (HttpWebResponse)request.GetResponse();
+                return (HttpWebResponse) request.GetResponse();
             }
             catch (WebException webEx)
             {
@@ -168,42 +204,7 @@ namespace Cyan
                     throw;
 
                 // we have a response from the service
-                return (HttpWebResponse)webEx.Response;
-            }
-        }
-
-        public string FormatUrl(string resource, string query = null)
-        {
-            if (IsDevelopmentStorage)
-            {
-                // development storage url http://127.0.0.1:10002/devstoreaccount1/{resource}?{query}
-                var url = string.Format("http://127.0.0.1:10002/{0}/{1}", AccountName, resource);
-                if (!string.IsNullOrEmpty(query))
-                    url = string.Join("?", url, query);
-
-                return url;
-            }
-            else
-            {
-                // table storage {protocol}://{account}.table.core.windows.net/{resource}?{query}
-                var protocol = UseSsl ? "https" : "http";
-
-                var url = string.Format("{0}://{1}.table.core.windows.net/{2}", protocol, AccountName, resource);
-                if (!string.IsNullOrEmpty(query))
-                    url = string.Join("?", url, query);
-
-                return url;
-            }
-        }
-
-        /// <summary>
-        /// Returns the current time formatted for the storage requests.
-        /// </summary>
-        static string XMsDate
-        {
-            get
-            {
-                return DateTime.UtcNow.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+                return (HttpWebResponse) webEx.Response;
             }
         }
     }

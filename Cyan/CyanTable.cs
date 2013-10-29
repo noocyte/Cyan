@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Web;
+using Cyan.Interfaces;
 
 namespace Cyan
 {
     [DebuggerDisplay("CyanTable({TableName})")]
-    public class CyanTable
+    public class CyanTable : ICyanTable
     {
+        public ICyanRest RestClient { get; set; }
+
         public CyanTable(string tableName, CyanClient client)
         {
-            this.TableName = tableName;
-            this.restClient = client.restClient;
+            TableName = tableName;
+            RestClient = client.RestClient;
         }
 
-        internal CyanRest restClient;
         public string TableName { get; private set; }
 
         #region Operations on Entities
@@ -42,15 +45,15 @@ namespace Cyan
 
             var resource = FormatResource(partition, row);
 
-            int returned = 0;
-            bool hasContinuation = false;
+            var returned = 0;
+            bool hasContinuation;
             string nextPartition = null;
             string nextRow = null;
             do
             {
                 var query = FormatQuery(partition, row, filter, top, fields, nextPartition, nextRow);
 
-                var response = restClient.GetRequest(resource, query);
+                var response = RestClient.GetRequest(resource, query);
 
                 if (single)
                 {
@@ -66,7 +69,7 @@ namespace Cyan
 
                 // just one | because both statements must be executed everytime
                 hasContinuation = response.Headers.TryGetValue("x-ms-continuation-NextPartitionKey", out nextPartition)
-                    | response.Headers.TryGetValue("x-ms-continuation-NextRowKey", out nextRow);
+                                  | response.Headers.TryGetValue("x-ms-continuation-NextRowKey", out nextRow);
 
                 var entities = CyanSerializer.DeserializeEntities(response.ResponseBody.Root);
                 foreach (var entity in entities)
@@ -76,8 +79,9 @@ namespace Cyan
                         break;
                 }
             } while (!disableContinuation // continuation has not been disabled
-                && hasContinuation // the response has a valid continuation
-                && !(top > 0 && returned >= top)); // if there is a top argument and we didn't return enough entities
+                     && hasContinuation // the response has a valid continuation
+                     && !(top > 0 && returned >= top));
+            // if there is a top argument and we didn't return enough entities
         }
 
         /// <summary>
@@ -104,17 +108,13 @@ namespace Cyan
             return InsertImpl(entity, out insertedEntity, false);
         }
 
-        bool InsertImpl(object entity, out dynamic insertedEntity, bool throwOnConflict)
+        private bool InsertImpl(object entity, out dynamic insertedEntity, bool throwOnConflict)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
-            var partition = cyanEntity.PartitionKey;
-            var row = cyanEntity.RowKey;
-            var eTag = cyanEntity.ETag;
-
             var document = cyanEntity.Serialize();
 
-            var response = restClient.PostRequest(TableName, document.ToString());
+            var response = RestClient.PostRequest(TableName, document.ToString());
 
             if (response.StatusCode == HttpStatusCode.Conflict
                 && !throwOnConflict)
@@ -149,7 +149,7 @@ namespace Cyan
             return UpdateImpl(entity, false, false);
         }
 
-        bool UpdateImpl(object entity, bool throwOnPreconditionFailure, bool unconditionalUpdate)
+        private bool UpdateImpl(object entity, bool throwOnPreconditionFailure, bool unconditionalUpdate)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
@@ -161,7 +161,7 @@ namespace Cyan
 
             var resource = FormatResource(partition, row);
 
-            var response = restClient.PutRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
+            var response = RestClient.PutRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
 
             // update entity etag for future updates
             string newETag;
@@ -199,7 +199,8 @@ namespace Cyan
             return MergeImpl(entity, false, false, fields);
         }
 
-        bool MergeImpl(object entity, bool throwOnPreconditionFailure, bool unconditionalUpdate, params string[] fields)
+        private bool MergeImpl(object entity, bool throwOnPreconditionFailure, bool unconditionalUpdate,
+            params string[] fields)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
@@ -208,14 +209,14 @@ namespace Cyan
             var eTag = cyanEntity.ETag;
 
             var filteredEntity = (fields != null && fields.Length > 0)
-                ?  CyanEntity.FromEntity(cyanEntity, fields)
+                ? CyanEntity.FromEntity(cyanEntity, fields)
                 : cyanEntity;
 
             var document = filteredEntity.Serialize();
 
             var resource = FormatResource(partition, row);
 
-            var response = restClient.MergeRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
+            var response = RestClient.MergeRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
 
             // update entity etag for future updates
             string newETag;
@@ -255,7 +256,7 @@ namespace Cyan
         {
             var resource = FormatResource(partition, row);
 
-            var response = restClient.DeleteRequest(resource, eTag);
+            var response = RestClient.DeleteRequest(resource, eTag);
             response.ThrowIfFailed();
         }
 
@@ -269,7 +270,7 @@ namespace Cyan
             var document = cyanEntity.Serialize();
             var resource = FormatResource(partition, row);
 
-            var response = restClient.PutRequest(resource, document.ToString());
+            var response = RestClient.PutRequest(resource, document.ToString());
             response.ThrowIfFailed();
 
             // update entity etag for future updates
@@ -294,7 +295,7 @@ namespace Cyan
             var document = filteredEntity.Serialize();
             var resource = FormatResource(partition, row);
 
-            var response = restClient.MergeRequest(resource, document.ToString());
+            var response = RestClient.MergeRequest(resource, document.ToString());
             response.ThrowIfFailed();
 
             // update entity etag for future updates
@@ -305,17 +306,18 @@ namespace Cyan
             return cyanEntity;
         }
 
-        public CyanEGT Batch()
+        public ICyanEGT Batch()
         {
             return new CyanEGT(this);
         }
 
         #endregion
 
-        static string FormatQuery(string partition, string row, string filter, int top, string[] fields, string nextPartition, string nextRow)
+        private static string FormatQuery(string partition, string row, string filter, int top, string[] fields,
+            string nextPartition, string nextRow)
         {
-            bool hasPartition = !string.IsNullOrEmpty(partition);
-            bool hasRow = !string.IsNullOrEmpty(row);
+            var hasPartition = !string.IsNullOrEmpty(partition);
+            var hasRow = !string.IsNullOrEmpty(row);
             if (hasPartition ^ hasRow)
             {
                 var indexer = hasPartition
@@ -335,13 +337,13 @@ namespace Cyan
                 return null;
 
             return FormatQuery(!string.IsNullOrEmpty(filter) ? Tuple.Create("$filter", filter) : null,
-                top > 0 ? Tuple.Create("$top", top.ToString()) : null,
+                top > 0 ? Tuple.Create("$top", top.ToString(CultureInfo.InvariantCulture)) : null,
                 (fields != null && fields.Length > 0) ? Tuple.Create("$select", string.Join(",", fields)) : null,
                 !string.IsNullOrEmpty(nextPartition) ? Tuple.Create("NextPartitionKey", nextPartition) : null,
                 !string.IsNullOrEmpty(nextRow) ? Tuple.Create("NextRowKey", nextRow) : null);
         }
 
-        static string FormatQuery(params Tuple<string, string>[] queryParameters)
+        private static string FormatQuery(params Tuple<string, string>[] queryParameters)
         {
             var ret = string.Join("&", queryParameters
                 .Where(p => p != null)

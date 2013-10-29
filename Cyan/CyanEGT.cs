@@ -1,23 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Web;
+using Cyan.Interfaces;
 
 namespace Cyan
 {
-    public class CyanEGT
+    public class CyanEGT : ICyanEGT
     {
-        internal CyanEGT(CyanTable table)
-        {
-            this.table = table;
-        }
+        private readonly HashSet<string> _modifiedRows = new HashSet<string>();
+        private readonly List<EntityOperation> _operations = new List<EntityOperation>();
+        private readonly ICyanTable _table;
+        private string _partitionKey;
 
-        CyanTable table;
-        string partitionKey;
-        HashSet<string> modifiedRows = new HashSet<string>();
-        List<EntityOperation> operations = new List<EntityOperation>();
+        internal CyanEGT(ICyanTable table)
+        {
+            _table = table;
+        }
 
         public dynamic Insert(object entity)
         {
@@ -25,7 +27,7 @@ namespace Cyan
 
             AddOperation(cyanEntity,
                 "POST",
-                table.TableName);
+                _table.TableName);
 
             return cyanEntity;
         }
@@ -36,7 +38,7 @@ namespace Cyan
 
             AddOperation(cyanEntity,
                 "PUT",
-                table.FormatResource(cyanEntity.PartitionKey, cyanEntity.RowKey));
+                _table.FormatResource(cyanEntity.PartitionKey, cyanEntity.RowKey));
         }
 
         public void Update(object entity, bool unconditionalUpdate = false)
@@ -45,7 +47,7 @@ namespace Cyan
 
             AddOperation(cyanEntity,
                 "PUT",
-                table.FormatResource(cyanEntity.PartitionKey, cyanEntity.RowKey),
+                _table.FormatResource(cyanEntity.PartitionKey, cyanEntity.RowKey),
                 Tuple.Create("If-Match", unconditionalUpdate ? "*" : cyanEntity.ETag));
         }
 
@@ -55,7 +57,7 @@ namespace Cyan
 
             AddOperation(cyanEntity,
                 "MERGE",
-                table.FormatResource(cyanEntity.PartitionKey, cyanEntity.RowKey),
+                _table.FormatResource(cyanEntity.PartitionKey, cyanEntity.RowKey),
                 Tuple.Create("If-Match", unconditionalUpdate ? "*" : cyanEntity.ETag));
         }
 
@@ -71,8 +73,8 @@ namespace Cyan
             AddOperation(partitionKey,
                 rowKey,
                 "DELETE",
-                table.FormatResource(partitionKey, rowKey),
-                Tuple.Create("If-Match", eTag == null ? "*" : eTag));
+                _table.FormatResource(partitionKey, rowKey),
+                Tuple.Create("If-Match", eTag ?? "*"));
         }
 
         public void Commit()
@@ -80,16 +82,14 @@ namespace Cyan
             var batchBoundary = string.Format("batch_{0}", Guid.NewGuid());
             var requestBody = EncodeBatchRequestBody(batchBoundary);
 
-            var debug = Encoding.UTF8.GetString(requestBody);
-
-            var response = table.restClient.BatchRequest(batchBoundary, requestBody);
+            var response = _table.RestClient.BatchRequest(batchBoundary, requestBody);
 
             response.ThrowIfFailed();
 
             foreach (var operationResponse in response.Responses)
             {
                 var index = int.Parse(operationResponse.Key);
-                EntityOperation op = operations[index];
+                EntityOperation op = _operations[index];
 
                 string eTagHeader;
                 // update entity etag
@@ -100,15 +100,13 @@ namespace Cyan
 
         public bool TryCommit()
         {
-            if (operations.Count == 0)
+            if (_operations.Count == 0)
                 return true;
 
             var batchBoundary = string.Format("batch_{0}", Guid.NewGuid());
             var requestBody = EncodeBatchRequestBody(batchBoundary);
 
-            var debug = Encoding.UTF8.GetString(requestBody);
-
-            var response = table.restClient.BatchRequest(batchBoundary, requestBody);
+            var response = _table.RestClient.BatchRequest(batchBoundary, requestBody);
 
             if (response.StatusCode != HttpStatusCode.Accepted)
                 response.ThrowIfFailed();
@@ -122,7 +120,7 @@ namespace Cyan
             foreach (var operationResponse in response.Responses)
             {
                 var index = int.Parse(operationResponse.Key);
-                EntityOperation op = operations[index];
+                EntityOperation op = _operations[index];
 
                 string eTagHeader;
                 // update entity etag
@@ -133,23 +131,24 @@ namespace Cyan
             return true;
         }
 
-        byte[] EncodeBatchRequestBody(string batchBoundary)
+        private byte[] EncodeBatchRequestBody(string batchBoundary)
         {
             var changesetBoundary = string.Format("changeset_{0}", Guid.NewGuid());
 
-            byte[] contentBytes = null;
+            byte[] contentBytes;
 
             using (var contentStream = new EGTRequestStream())
             {
                 // write batch boundary
                 contentStream.WriteBoundary(batchBoundary);
                 // write batch Content-Type header
-                contentStream.WriteHeader("Content-Type", string.Format("multipart/mixed; boundary={0}", changesetBoundary));
+                contentStream.WriteHeader("Content-Type",
+                    string.Format("multipart/mixed; boundary={0}", changesetBoundary));
                 // blank line after headers
                 contentStream.WriteLine();
 
                 int index = 0;
-                foreach (var operation in operations)
+                foreach (var operation in _operations)
                 {
                     // each changeset
                     // write changeset begin boundary
@@ -161,7 +160,7 @@ namespace Cyan
                     contentStream.WriteLine();
 
                     // write changeset payload
-                    operation.Write(contentStream, table.restClient, index++.ToString());
+                    operation.Write(contentStream, _table.RestClient, index++.ToString(CultureInfo.InvariantCulture));
                 }
 
                 // write changeset and batch end boundaries
@@ -176,56 +175,64 @@ namespace Cyan
             return contentBytes;
         }
 
-        void ValidateEntity(string partitionKey, string rowKey)
+        private void ValidateEntity(string partitionKey, string rowKey)
         {
-                if (partitionKey == null)
-                    throw new ArgumentNullException("partitionKey");
-                if (rowKey == null)
-                    throw new ArgumentNullException("rowKey");
+            if (partitionKey == null)
+                throw new ArgumentNullException("partitionKey");
+            if (rowKey == null)
+                throw new ArgumentNullException("rowKey");
 
-            if (this.partitionKey == null)
+            if (_partitionKey == null)
             {
-                this.partitionKey = partitionKey;
+                _partitionKey = partitionKey;
             }
             else
             {
-                if (this.partitionKey != partitionKey)
+                if (_partitionKey != partitionKey)
                     throw new ArgumentException("Invalid partition key.", "partitionKey");
             }
 
-            if (modifiedRows.Contains(rowKey))
+            if (_modifiedRows.Contains(rowKey))
             {
-                throw new NotSupportedException("Multiple operations on the same entity are not supported in the same batch.");
+                throw new NotSupportedException(
+                    "Multiple operations on the same entity are not supported in the same batch.");
             }
-            else
-            {
-                modifiedRows.Add(rowKey);
-            }
+
+            _modifiedRows.Add(rowKey);
         }
 
-        void AddOperation(string partitionKey,
-                string rowKey,
-                string method,
-                string resource,
-                params Tuple<string, string>[] headers)
+        private void AddOperation(string partitionKey,
+            string rowKey,
+            string method,
+            string resource,
+            params Tuple<string, string>[] headers)
         {
             ValidateEntity(partitionKey, rowKey);
 
-            operations.Add(EntityOperation.CreateOperation(null, method, resource, headers));
+            _operations.Add(EntityOperation.CreateOperation(null, method, resource, headers));
         }
 
-        void AddOperation(CyanEntity entity,
-                string method,
-                string resource,
-                params Tuple<string, string>[] headers)
+        private void AddOperation(CyanEntity entity,
+            string method,
+            string resource,
+            params Tuple<string, string>[] headers)
         {
             ValidateEntity(entity.PartitionKey, entity.RowKey);
 
-            operations.Add(EntityOperation.CreateOperation(entity, method, resource, headers));
+            _operations.Add(EntityOperation.CreateOperation(entity, method, resource, headers));
         }
 
-        class EntityOperation
+        private class EntityOperation
         {
+            private CyanEntity _entity;
+            private IEnumerable<Tuple<string, string>> _headers;
+            private string _method;
+            private string _resource;
+
+            private EntityOperation()
+            {
+            }
+
             public static EntityOperation CreateOperation(CyanEntity entity,
                 string method,
                 string resource,
@@ -241,50 +248,44 @@ namespace Cyan
 
                 var ret = new EntityOperation
                 {
-                    entity = entity,
-                    method = method,
-                    resource = resource,
-                    headers = headers
+                    _entity = entity,
+                    _method = method,
+                    _resource = resource,
+                    _headers = headers
                 };
 
                 return ret;
             }
 
-            EntityOperation() { }
-
-            IEnumerable<Tuple<string, string>> headers;
-            string method;
-            string resource;
-            CyanEntity entity;
-
             public void UpdateEntityETag(string eTag)
             {
-                if ((method == "POST" || method == "PUT" || method == "MERGE") && entity != null)
-                    entity.ETag = eTag;
+                if ((_method == "POST" || _method == "PUT" || _method == "MERGE") && _entity != null)
+                    _entity.ETag = eTag;
             }
 
-            public void Write(EGTRequestStream requestStream, CyanRest restClient, string contentId)
+            public void Write(EGTRequestStream requestStream, ICyanRest restClient, string contentId)
             {
                 byte[] contentBytes = null;
-                if (entity != null)
+                if (_entity != null)
                 {
-                    var content = entity.Serialize();
+                    var content = _entity.Serialize();
                     contentBytes = Encoding.UTF8.GetBytes(content.ToString());
                 }
 
-                var finalHeaders = new List<Tuple<string, string>>();
-                finalHeaders.Add(Tuple.Create("Content-ID", contentId));
+                var finalHeaders = new List<Tuple<string, string>> {Tuple.Create("Content-ID", contentId)};
+
                 if (contentBytes != null && contentBytes.Length > 0)
                 {
                     finalHeaders.Add(Tuple.Create("Content-Type", "application/atom+xml;type=entry"));
-                    finalHeaders.Add(Tuple.Create("Content-Length", contentBytes.Length.ToString()));
+                    finalHeaders.Add(Tuple.Create("Content-Length",
+                        contentBytes.Length.ToString(CultureInfo.InvariantCulture)));
                 }
 
-                if (headers != null)
-                    finalHeaders.AddRange(headers);
+                if (_headers != null)
+                    finalHeaders.AddRange(_headers);
 
                 // write status line
-                requestStream.WriteLine("{0} {1} {2}", method, restClient.FormatUrl(resource), "HTTP/1.1");
+                requestStream.WriteLine("{0} {1} {2}", _method, restClient.FormatUrl(_resource), "HTTP/1.1");
 
                 // write headers
                 foreach (var header in finalHeaders)
