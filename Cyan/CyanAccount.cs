@@ -5,18 +5,18 @@ using System.Text;
 
 namespace Cyan
 {
-    class CyanAccount
+    internal class CyanAccount
     {
+        private readonly object _hasherSync = new object();
+        private readonly HMACSHA256 _signatureHasher;
+
         public CyanAccount(string accountName, string accountSecret)
         {
             Name = accountName;
 
             var key = Convert.FromBase64String(accountSecret);
-            signatureHasher = new HMACSHA256(key);
+            _signatureHasher = new HMACSHA256(key);
         }
-        
-        HMACSHA256 signatureHasher;
-        object hasherSync = new object();
 
         public string Name { get; private set; }
 
@@ -35,18 +35,19 @@ namespace Cyan
             request.Headers.Add("Authorization", authorizationHeader);
         }
 
-        string GenerateSignature(string method, string resource, string xMsDate, string contentMD5 = "", string contentType = "")
+        private string GenerateSignature(string method, string resource, string xMsDate, string contentMd5 = "",
+            string contentType = "")
         {
             var canonicalizedResource = string.Format("/{0}{1}", Name, resource);
 
             // format: method\ncontentMD5\ncontentType\nxMsDate\ncanonicalizedResource
-            var signature = string.Join("\n", method, contentMD5, contentType, xMsDate, canonicalizedResource);
+            var signature = string.Join("\n", method, contentMd5, contentType, xMsDate, canonicalizedResource);
 
             var signatureBytes = Encoding.UTF8.GetBytes(signature);
 
             byte[] hash;
-            lock (hasherSync)
-                hash = signatureHasher.ComputeHash(signatureBytes);
+            lock (_hasherSync)
+                hash = _signatureHasher.ComputeHash(signatureBytes);
 
             return Convert.ToBase64String(hash);
         }

@@ -5,9 +5,18 @@ using System.Text.RegularExpressions;
 
 namespace Cyan
 {
-    static class CyanUtilities
+    internal static class CyanUtilities
     {
-        static readonly Regex ValidKeyFieldRegex = new Regex(@"^[^#/\\?]{0,1024}$", RegexOptions.Compiled);
+        public enum SupportedProtocols
+        {
+            Http,
+            Https,
+            NotSupported
+        }
+
+        private static readonly Regex ValidKeyFieldRegex = new Regex(@"^[^#/\\?]{0,1024}$", RegexOptions.Compiled);
+        private static readonly Regex TableNameRegex = new Regex("^[A-Za-z][A-Za-z0-9]{2,62}$", RegexOptions.Compiled);
+
         public static void ValidateKeyField(string keyField)
         {
             if (!ValidKeyFieldRegex.IsMatch(keyField))
@@ -33,8 +42,7 @@ namespace Cyan
             }
         }
 
-        static readonly Regex TableNameRegex = new Regex("^[A-Za-z][A-Za-z0-9]{2,62}$", RegexOptions.Compiled);
-        static bool IsValidTableName(string tableName)
+        private static bool IsValidTableName(string tableName)
         {
             return TableNameRegex.IsMatch(tableName);
         }
@@ -48,22 +56,17 @@ namespace Cyan
         public static IDictionary<string, string> ParseConnectionStringKeyValues(string connectionString)
         {
             var elements = connectionString
-                .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                .Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries);
 
             var keyValues = elements
                 .Select(e => e.Split('='))
-                .Select(eTokens => new { Key = eTokens[0], Value = eTokens[1] });
+                .Select(eTokens => new {Key = eTokens[0], Value = eTokens[1]});
 
             return keyValues.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.InvariantCultureIgnoreCase);
         }
 
-        public enum SupportedProtocols
-        {
-            Http,
-            Https,
-            NotSupported
-        }
-        public static SupportedProtocols ParseConnectionStringProtocol(IDictionary<string, string> connectionStringKeyValues)
+        public static SupportedProtocols ParseConnectionStringProtocol(
+            IDictionary<string, string> connectionStringKeyValues)
         {
             string protocolValue;
             if (!connectionStringKeyValues.TryGetValue("DefaultEndpointsProtocol", out protocolValue))

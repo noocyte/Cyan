@@ -15,8 +15,9 @@ namespace Cyan
 
             string body = null;
             using (var responseStream = response.GetResponseStream())
-            using (var reader = new StreamReader(responseStream))
-                body = reader.ReadToEnd();
+                if (responseStream != null)
+                    using (var reader = new StreamReader(responseStream))
+                        body = reader.ReadToEnd();
 
             XDocument parsedBody = !string.IsNullOrEmpty(body) ? XDocument.Parse(body) : null;
 

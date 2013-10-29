@@ -13,6 +13,6 @@ namespace Cyan
           System.Runtime.Serialization.StreamingContext context)
             : base(info, context) { }
 
-        public string ContentID { get; set; }
+        public string ContentId { get; set; }
     }
 }

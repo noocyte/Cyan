@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Cyan
 {
-    class EGTRequestStream : MemoryStream
+    internal class EGTRequestStream : MemoryStream
     {
         public void WriteBoundary(string boundary)
         {

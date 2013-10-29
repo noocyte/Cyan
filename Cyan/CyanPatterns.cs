@@ -13,7 +13,7 @@ namespace Cyan
             Action<dynamic> entityModifier)
         {
             dynamic entity;
-            var success = false;
+            bool success;
             do
             {
                 entity = table.Query(partitionKey, rowKey).FirstOrDefault();
@@ -50,7 +50,7 @@ namespace Cyan
             Action<dynamic> entityModifier, params string[] fields)
         {
             dynamic entity;
-            var success = false;
+            bool success;
             do
             {
                 entity = table.Query(partitionKey, rowKey).FirstOrDefault();
@@ -85,7 +85,7 @@ namespace Cyan
             string rowKey,
             Action<dynamic> entityModifier)
         {
-            var success = false;
+            bool success;
             dynamic entity;
             do
             {
@@ -103,8 +103,8 @@ namespace Cyan
             Func<CyanTable, IEnumerable<dynamic>> entityModifier,
             bool unconditionalUpdate = false)
         {
-            var success = false;
-            List<dynamic> ret = null;
+            bool success;
+            List<dynamic> ret;
             do
             {
                 var toUpdate = entityModifier(table);
@@ -122,7 +122,7 @@ namespace Cyan
 
         public static void BatchDelete(this CyanTable table, IEnumerable<object> entities, bool unconditionalUpdate = false)
         {
-            table.BatchDelete(entities.Select(e => CyanEntity.FromObject(e)), unconditionalUpdate);
+            table.BatchDelete(entities.Select(CyanEntity.FromObject), unconditionalUpdate);
         }
 
         public static void BatchDelete(this CyanTable table, IEnumerable<CyanEntity> entities, bool unconditionalUpdate = false)
@@ -147,7 +147,7 @@ namespace Cyan
 
         public static IEnumerable<dynamic> BatchInsert(this CyanTable table, IEnumerable<object> entities)
         {
-            return table.BatchInsert(entities.Select(e => CyanEntity.FromObject(e)));
+            return table.BatchInsert(entities.Select(CyanEntity.FromObject));
         }
 
         public static IEnumerable<dynamic> BatchInsert(this CyanTable table, IEnumerable<CyanEntity> entities)
@@ -161,7 +161,7 @@ namespace Cyan
                 }
                 else
                 {
-                    List<dynamic> ret = new List<dynamic>();
+                    var ret = new List<dynamic>();
                     var batch = table.Batch();
                     foreach (var entity in partition)
                         ret.Add(batch.Insert(entity));

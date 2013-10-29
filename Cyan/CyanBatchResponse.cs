@@ -84,7 +84,7 @@ namespace Cyan
             return new CyanBatchResponse(statusCode, headers, responseBody) { Responses = respDictionary };
         }
 
-        static CyanRestResponse[] ParseChangesets(HttpWebResponse response,
+        static IEnumerable<CyanRestResponse> ParseChangesets(WebResponse response,
             string batchBoundary,
             out string batchBody)
         {
@@ -99,160 +99,159 @@ namespace Cyan
             string changesetBeginBoundary = null;
             string changesetEndBoundary = null;
             using (var responseStream = response.GetResponseStream())
-            using (var reader = new StreamReader(responseStream))
-            {
-                ChangesetResponse currentChangeset = null;
-
-                string currentLine;
-                var state = ParserState.BeginResponse;
-                while ((currentLine = reader.ReadLine()) != null)
-                {
-                    switch (state)
+                if (responseStream != null)
+                    using (var reader = new StreamReader(responseStream))
                     {
-                        case ParserState.BeginResponse:
-                            {
-                                if (currentLine == batchBeginBoundary)
-                                {
-                                    state = ParserState.BatchHeaders;
-                                    break;
-                                }
+                        ChangesetResponse currentChangeset = null;
 
-                                if (!string.IsNullOrWhiteSpace(currentLine))
-                                    throw new InvalidOperationException("Unexpected content.");
-
-                                // empty line
-                                break;
-                            }
-                        case ParserState.BatchHeaders:
+                        string currentLine;
+                        var state = ParserState.BeginResponse;
+                        while ((currentLine = reader.ReadLine()) != null)
+                        {
+                            switch (state)
                             {
-                                Tuple<string, string> header;
-                                if (TryParseHeader(currentLine, out header))
+                                case ParserState.BeginResponse:
                                 {
-                                    batchHeaders.Add(header.Item1, header.Item2);
-                                    if (header.Item1 == "Content-Type")
+                                    if (currentLine == batchBeginBoundary)
                                     {
-                                        string changesetBoundary;
-                                        if (TryParseBoundary(header.Item2, out changesetBoundary))
-                                        {
-                                            changesetBeginBoundary = string.Format("--{0}", changesetBoundary);
-                                            changesetEndBoundary = string.Format("--{0}--", changesetBoundary);
-                                        }
-                                        else
-                                        {
-                                            throw new InvalidOperationException("Invalid batch Content-Type.");
-                                        }
+                                        state = ParserState.BatchHeaders;
+                                        break;
                                     }
 
+                                    if (!string.IsNullOrWhiteSpace(currentLine))
+                                        throw new InvalidOperationException("Unexpected content.");
+
+                                    // empty line
                                     break;
                                 }
-                                else
+                                case ParserState.BatchHeaders:
                                 {
-                                    if (changesetBeginBoundary == null || changesetEndBoundary == null)
+                                    Tuple<string, string> header;
+                                    if (TryParseHeader(currentLine, out header))
+                                    {
+                                        batchHeaders.Add(header.Item1, header.Item2);
+                                        if (header.Item1 == "Content-Type")
+                                        {
+                                            string changesetBoundary;
+                                            if (TryParseBoundary(header.Item2, out changesetBoundary))
+                                            {
+                                                changesetBeginBoundary = string.Format("--{0}", changesetBoundary);
+                                                changesetEndBoundary = string.Format("--{0}--", changesetBoundary);
+                                            }
+                                            else
+                                            {
+                                                throw new InvalidOperationException("Invalid batch Content-Type.");
+                                            }
+                                        }
+
+                                        break;
+                                    }
+                                    
+                                    if (changesetBeginBoundary == null)
                                         throw new InvalidOperationException("Changeset boundary not found.");
 
                                     state = ParserState.BatchBody;
                                     break;
                                 }
-                            }
-                        case ParserState.BatchBody:
-                            {
-                                if (currentLine == changesetBeginBoundary)
+                                case ParserState.BatchBody:
                                 {
-                                    currentChangeset = new ChangesetResponse();
-                                    state = ParserState.ChangesetHeaders;
-                                    break;
-                                }
-
-                                if (currentLine == batchEndBoundary)
-                                {
-                                    if (builder != null)
+                                    if (currentLine == changesetBeginBoundary)
                                     {
-                                        // the batch failed, parse the error
+                                        currentChangeset = new ChangesetResponse();
+                                        state = ParserState.ChangesetHeaders;
+                                        break;
                                     }
 
-                                    state = ParserState.EndResponse;
-                                    break;
-                                }
+                                    if (currentLine == batchEndBoundary)
+                                    {
+                                        if (builder != null)
+                                        {
+                                            // the batch failed, parse the error
+                                        }
 
-                                if (!string.IsNullOrWhiteSpace(currentLine))
-                                {
-                                    // the batch failed, collect the error
-                                    if (builder == null)
-                                        builder = new StringBuilder();
-                                    builder.AppendLine(currentLine);
-                                }
-                                break;
-                            }
-                        case ParserState.ChangesetHeaders:
-                            {
-                                Tuple<string, string> header;
-                                if (TryParseHeader(currentLine, out header))
-                                {
-                                    currentChangeset.changesetHeaders.Add(header.Item1, header.Item2);
+                                        state = ParserState.EndResponse;
+                                        break;
+                                    }
+
+                                    if (!string.IsNullOrWhiteSpace(currentLine))
+                                    {
+                                        // the batch failed, collect the error
+                                        if (builder == null)
+                                            builder = new StringBuilder();
+                                        builder.AppendLine(currentLine);
+                                    }
                                     break;
                                 }
-                                else
+                                case ParserState.ChangesetHeaders:
                                 {
+                                    Tuple<string, string> header;
+                                    if (TryParseHeader(currentLine, out header))
+                                    {
+                                        if (currentChangeset != null)
+                                            currentChangeset.ChangesetHeaders.Add(header.Item1, header.Item2);
+                                        break;
+                                    }
                                     state = ParserState.ResponseStatusLine;
                                     break;
                                 }
-                            }
-                        case ParserState.ResponseStatusLine:
-                            {
-                                var statusTokens = currentLine.Split(' ');
-                                if (statusTokens.Length < 2)
-                                    throw new InvalidOperationException("Malformed status line.");
-
-                                var httpVersion = statusTokens[0];
-                                var unparsedStatusCode = statusTokens[1];
-                                int parsedStatusCode;
-                                if (!int.TryParse(unparsedStatusCode, out parsedStatusCode))
-                                    throw new InvalidOperationException("Invalid status code.");
-
-                                currentChangeset.responseStatus = (HttpStatusCode)parsedStatusCode;
-
-                                state = ParserState.ResponseHeaders;
-                                break;
-                            }
-                        case ParserState.ResponseHeaders:
-                            {
-                                Tuple<string, string> header;
-                                if (TryParseHeader(currentLine, out header))
+                                case ParserState.ResponseStatusLine:
                                 {
-                                    currentChangeset.responseHeaders.Add(header.Item1, header.Item2);
+                                    var statusTokens = currentLine.Split(' ');
+                                    if (statusTokens.Length < 2)
+                                        throw new InvalidOperationException("Malformed status line.");
+
+                                    var unparsedStatusCode = statusTokens[1];
+                                    int parsedStatusCode;
+                                    if (!int.TryParse(unparsedStatusCode, out parsedStatusCode))
+                                        throw new InvalidOperationException("Invalid status code.");
+
+                                    if (currentChangeset != null)
+                                        currentChangeset.ResponseStatus = (HttpStatusCode)parsedStatusCode;
+
+                                    state = ParserState.ResponseHeaders;
                                     break;
                                 }
-                                else
+                                case ParserState.ResponseHeaders:
                                 {
+                                    Tuple<string, string> header;
+                                    if (TryParseHeader(currentLine, out header))
+                                    {
+                                        if (currentChangeset != null)
+                                            currentChangeset.ResponseHeaders.Add(header.Item1, header.Item2);
+                                        break;
+                                    }
                                     state = ParserState.ResponseBody;
                                     break;
                                 }
-                            }
-                        case ParserState.ResponseBody:
-                            {
-                                bool changesetEnd = false;
-                                if (currentLine == changesetBeginBoundary
-                                    || (changesetEnd = currentLine == changesetEndBoundary))
+                                case ParserState.ResponseBody:
                                 {
-                                    // todo: return old changeset
-                                    var changesetResponse = currentChangeset.ToResponse();
+                                    bool changesetEnd = false;
+                                    if (currentLine == changesetBeginBoundary
+                                        || (changesetEnd = currentLine == changesetEndBoundary))
+                                    {
+                                        // todo: return old changeset
+                                        if (currentChangeset != null)
+                                        {
+                                            var changesetResponse = currentChangeset.ToResponse();
 
-                                    responses.Add(changesetResponse);
+                                            responses.Add(changesetResponse);
+                                        }
 
-                                    currentChangeset = changesetEnd ? null : new ChangesetResponse();
-                                    state = changesetEnd ? ParserState.BatchBody : ParserState.ChangesetHeaders;
+                                        currentChangeset = changesetEnd ? null : new ChangesetResponse();
+                                        state = changesetEnd ? ParserState.BatchBody : ParserState.ChangesetHeaders;
+                                        break;
+                                    }
+
+                                    if (currentChangeset != null)
+                                        currentChangeset.ResponseBuilder.AppendLine(currentLine);
                                     break;
                                 }
-
-                                currentChangeset.responseBuilder.AppendLine(currentLine);
-                                break;
                             }
-                    }
-                }
+                        }
 
-                if (state != ParserState.EndResponse)
-                    throw new InvalidOperationException("Premature end of response.");
-            }
+                        if (state != ParserState.EndResponse)
+                            throw new InvalidOperationException("Premature end of response.");
+                    }
 
             var body = builder != null ? builder.ToString() : null;
             batchBody = !string.IsNullOrWhiteSpace(body) ? body : null;
@@ -262,19 +261,19 @@ namespace Cyan
 
         class ChangesetResponse
         {
-            public Dictionary<string, string> changesetHeaders = new Dictionary<string, string>();
-            public Dictionary<string, string> responseHeaders = new Dictionary<string, string>();
-            public HttpStatusCode responseStatus;
-            public StringBuilder responseBuilder = new StringBuilder();
+            public readonly Dictionary<string, string> ChangesetHeaders = new Dictionary<string, string>();
+            public readonly Dictionary<string, string> ResponseHeaders = new Dictionary<string, string>();
+            public HttpStatusCode ResponseStatus;
+            public readonly StringBuilder ResponseBuilder = new StringBuilder();
 
             public CyanRestResponse ToResponse()
             {
-                var responseBody = responseBuilder.ToString();
+                var responseBody = ResponseBuilder.ToString();
 
-                bool hasBody = responseStatus != HttpStatusCode.NoContent;
+                bool hasBody = ResponseStatus != HttpStatusCode.NoContent;
 
-                var ret = new CyanRestResponse(responseStatus,
-                    responseHeaders,
+                var ret = new CyanRestResponse(ResponseStatus,
+                    ResponseHeaders,
                     hasBody ? XDocument.Parse(responseBody) : null);
 
                 return ret;
