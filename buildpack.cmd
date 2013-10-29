@@ -5,4 +5,4 @@ mkdir release
 
 .nuget\NuGet.exe pack -sym Cyan\Cyan.csproj -OutputDirectory release
 
-@echo Publish: .nuget\NuGet.exe publish release\Proactima.Cyan.[version].nupkg
+@echo Publish: .nuget\nuget push [package] [API Key] -Source https://www.myget.org/F/uxrisk/api/v2/package
