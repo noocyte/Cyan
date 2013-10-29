@@ -1,0 +1,14 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Proactima Cyan</id>
+    <version>1.0.0</version>
+    <authors>Jarle Nygård, Massimo Andreasi Bassi</authors>
+    <owners>Proactima Solutions AS</owners>
+    <licenseUrl>https://raw.github.com/proactima/Cyan/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/proactima/Cyan</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Framework to work with Azure Storage and dynamic objects.</description>
+    <releaseNotes>Fork from Codeplex, with added interfaces.</releaseNotes>
+  </metadata>
+</package>
