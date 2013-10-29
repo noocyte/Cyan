@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0"?>
 <package >
   <metadata>
-    <id>Proactima Cyan</id>
+    <id>Proactima.Cyan</id>
     <version>1.0.0</version>
     <authors>Jarle Nygård, Massimo Andreasi Bassi</authors>
     <owners>Proactima Solutions AS</owners>
