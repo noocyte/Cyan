@@ -56,13 +56,23 @@ namespace Cyan
         public static IDictionary<string, string> ParseConnectionStringKeyValues(string connectionString)
         {
             var elements = connectionString
-                .Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries);
+                .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
 
             var keyValues = elements
-                .Select(e => e.Split('='))
-                .Select(eTokens => new {Key = eTokens[0], Value = eTokens[1]});
+                .Select(SplitKeyValue)
+                .Select(eTokens => new { Key = eTokens[0], Value = eTokens[1] });
 
             return keyValues.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.InvariantCultureIgnoreCase);
+        }
+
+        private static string[] SplitKeyValue(string element)
+        {
+            var indexOfSplitter = element.IndexOf('=');
+            var elements = new string[2];
+            elements[0] = element.Substring(0, indexOfSplitter);
+            elements[1] = element.Substring(indexOfSplitter + 1);
+
+            return elements;
         }
 
         public static SupportedProtocols ParseConnectionStringProtocol(

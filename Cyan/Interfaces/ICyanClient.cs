@@ -13,6 +13,8 @@ namespace Cyan.Interfaces
         /// The name of the account in use.
         /// </summary>
         string AccountName { get; }
+        string AccountSecret { get; }
+        
 
         /// <summary>
         /// Returns <code>true</code> if the client is using https.

@@ -13,12 +13,14 @@ namespace Cyan
         public CyanAccount(string accountName, string accountSecret)
         {
             Name = accountName;
+            AccountSecret = accountSecret;
 
-            var key = Convert.FromBase64String(accountSecret);
+            var key = Convert.FromBase64String(AccountSecret);
             _signatureHasher = new HMACSHA256(key);
         }
 
         public string Name { get; private set; }
+        public string AccountSecret { get; private set; }
 
         public void Sign(HttpWebRequest request)
         {

@@ -38,6 +38,11 @@ namespace Cyan
             get { return _account.Name; }
         }
 
+        public string AccountSecret
+        {
+            get { return _account.AccountSecret; }
+        }
+
         public bool IsDevelopmentStorage
         {
             get { return AccountName == CyanClient.DevelopmentStorageAccount; }

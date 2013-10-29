@@ -9,7 +9,9 @@ namespace Cyan.Tests
     [TestClass]
     public class FromConnectionString
     {
-        static string randomAccountKey = Convert.ToBase64String(Encoding.UTF8
+        const string Secret = "OwR4zgUkukCaDylXw4vIVonGgIeep8sJoMBMvqyqCoVzDs3VGa6yOFhaBFv1Hr/N6TSC9Ex5GOETsdnq3dcVgg==";
+
+        static readonly string RandomAccountKey = Convert.ToBase64String(Encoding.UTF8
             .GetBytes(Guid.NewGuid().ToString()));
 
         [TestMethod, TestCategory("Connection strings")]
@@ -29,16 +31,24 @@ namespace Cyan.Tests
         [TestMethod, TestCategory("Connection strings")]
         public void AccountNameAndKey()
         {
-            var client = CyanClient.FromConnectionString("AccountName=accountName;AccountKey=" + randomAccountKey);
+            var client = CyanClient.FromConnectionString("AccountName=accountName;AccountKey=" + RandomAccountKey);
 
             Assert.AreEqual("accountName", client.AccountName);
+        }
+
+        [TestMethod, TestCategory("Connection strings")]
+        public void AccountKeyWithDoubleEqual()
+        {
+            var client = CyanClient.FromConnectionString("AccountName=accountName;AccountKey=" + Secret);
+
+            Assert.AreEqual(Secret, client.AccountSecret);
         }
 
         [TestMethod, TestCategory("Connection strings")]
         [ExpectedException(typeof(ArgumentException))]
         public void InvalidNoAccountName()
         {
-            var client = CyanClient.FromConnectionString("AccountKey=" + randomAccountKey);
+            var client = CyanClient.FromConnectionString("AccountKey=" + RandomAccountKey);
         }
 
         [TestMethod, TestCategory("Connection strings")]
@@ -59,11 +69,11 @@ namespace Cyan.Tests
         public void Protocol()
         {
             Assert.IsTrue(CyanClient
-                .FromConnectionString("DefaultEndpointsProtocol=https;AccountName=accountName;AccountKey=" + randomAccountKey)
+                .FromConnectionString("DefaultEndpointsProtocol=https;AccountName=accountName;AccountKey=" + RandomAccountKey)
                 .UseSsl);
 
             Assert.IsFalse(CyanClient
-                .FromConnectionString("DefaultEndpointsProtocol=http;AccountName=accountName;AccountKey=" + randomAccountKey)
+                .FromConnectionString("DefaultEndpointsProtocol=http;AccountName=accountName;AccountKey=" + RandomAccountKey)
                 .UseSsl);
         }
 
@@ -71,14 +81,14 @@ namespace Cyan.Tests
         [ExpectedException(typeof(NotSupportedException))]
         public void InvalidProtocol()
         {
-            CyanClient.FromConnectionString("DefaultEndpointsProtocol=something;AccountName=accountName;AccountKey=" + randomAccountKey);
+            CyanClient.FromConnectionString("DefaultEndpointsProtocol=something;AccountName=accountName;AccountKey=" + RandomAccountKey);
         }
 
         [TestMethod, TestCategory("Connection strings")]
         [ExpectedException(typeof(NotSupportedException))]
         public void CustomEndpoint()
         {
-            CyanClient.FromConnectionString("TableEndpoint=endpoint;AccountName=accountName;AccountKey=" + randomAccountKey);
+            CyanClient.FromConnectionString("TableEndpoint=endpoint;AccountName=accountName;AccountKey=" + RandomAccountKey);
         }
     }
 }

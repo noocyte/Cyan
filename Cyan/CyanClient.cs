@@ -58,6 +58,11 @@ namespace Cyan
             get { return RestClient.AccountName; }
         }
 
+        public string AccountSecret
+        {
+            get { return RestClient.AccountSecret; }
+        }
+
         /// <summary>
         /// Returns <code>true</code> if the client is using https.
         /// </summary>
@@ -159,7 +164,7 @@ namespace Cyan
         /// </summary>
         /// <param name="connectionString">The connection string to be parsed.</param>
         /// <returns>A CyanClient configured via the <code>connectionString</code>.</returns>
-        public static CyanClient FromConnectionString(string connectionString)
+        public static ICyanClient FromConnectionString(string connectionString)
         {
             var keyValues = CyanUtilities.ParseConnectionStringKeyValues(connectionString);
 
