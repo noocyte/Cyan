@@ -57,6 +57,8 @@
     <Compile Include="CyanEGT.cs" />
     <Compile Include="CyanEntity.cs" />
     <Compile Include="CyanException.cs" />
+    <Compile Include="Fluent\FluentCyan.cs" />
+    <Compile Include="Fluent\Response.cs" />
     <Compile Include="Policies\CyanFixedRetryPolicy.cs" />
     <Compile Include="CyanPatterns.cs" />
     <Compile Include="CyanRest.cs" />

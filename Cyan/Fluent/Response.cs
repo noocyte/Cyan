@@ -1,12 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net;
 
 namespace Cyan.Fluent
 {
-    class Response
+    public class Response<T>
     {
+        public Response(HttpStatusCode status, T result)
+        {
+            Result = result;
+            Status = status;
+        }
+
+        public HttpStatusCode Status { get; private set; }
+        public T Result { get; private set; }
     }
 }
