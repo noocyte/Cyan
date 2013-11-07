@@ -92,6 +92,8 @@ namespace Cyan.Tests.Facade
             Assert.That(actual.Result.Id, Is.EqualTo(expected.Result.Id));
             Assert.That(actual.Result.PartitionKey, Is.EqualTo(expected.Result.PartitionKey));
             Assert.That(actual.Result.RowKey, Is.EqualTo(expected.Result.RowKey));
+            Assert.That(actual.Result.ETag.Replace(":", "%3A"), Is.EqualTo(expected.Result.ETag));
+            Assert.That((DateTimeOffset) (actual.Result.Timestamp), Is.EqualTo(expected.Result.Timestamp));
         }
 
 
