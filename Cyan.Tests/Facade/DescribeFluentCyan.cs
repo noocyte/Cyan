@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using System.Net;
+using System.Web;
 using Cyan.Fluent;
 using Cyan.Policies;
 using Cyan.Tests.Helpers;
@@ -92,12 +93,13 @@ namespace Cyan.Tests.Facade
             var client = new FluentCyan<object>(FluentCyanHelper.GetCyanClient());
 
             // w
-            var actual = client
-                .FromTable("TemporaryObject")
-                .Retrieve(objectId);
+            dynamic actual = client.FromTable("TemporaryObject")
+                                   .Retrieve(objectId);
 
             // t
-            actual.ShouldBeEquivalentTo(expected);
+            Assert.That(actual.Result.Id, Is.EqualTo(expected.Result.Id));
+            Assert.That(actual.Result.PartitionKey, Is.EqualTo(expected.Result.PartitionKey));
+            Assert.That(actual.Result.RowKey, Is.EqualTo(expected.Result.RowKey));
         }
 
 
