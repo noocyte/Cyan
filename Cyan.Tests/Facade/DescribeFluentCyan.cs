@@ -2,6 +2,9 @@
 using System.Configuration;
 using System.Net;
 using Cyan.Fluent;
+using Cyan.Policies;
+using Cyan.Tests.Helpers;
+using FakeItEasy;
 using FluentAssertions;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
@@ -15,66 +18,105 @@ namespace Cyan.Tests.Facade
     [TestFixture]
     public class DescribeFluentCyan
     {
-        private AzureTable<TemporaryObject> TableClient;
 
         [Test]
         public void ItShouldReturnNotFound_WhenQueryingForOneRecord_GivenNoRecordsExists()
         {
             // g
-            var expected = new Response<object>(HttpStatusCode.NotFound, null);
-            var client = new FluentCyan<object>();
+            var expected = new Response<TemporaryObject>(HttpStatusCode.NotFound, null);
+            var client = new FluentCyan<TemporaryObject>(FluentCyanHelper.GetCyanClient());
 
             // w
-            var actual = client.Retrieve("123");
+            var actual = client
+                .FromTable("dummy")
+                .Retrieve("123");
 
             // t
             actual.ShouldBeEquivalentTo(expected);
+        }
+
+
+        [Test]
+        public void ItShouldDefineTheTableName()
+        {
+            // g
+            const string tableName = "dummy";
+            var fakeClient = FluentCyanHelper.GetFakeCyanClient();
+            var client = new FluentCyan<TemporaryObject>(fakeClient);
+
+            // w
+            client.FromTable(tableName);
+
+            // t
+            A.CallTo(() => fakeClient.TryCreateTable(tableName)).MustHaveHappened();
+        }
+
+        [Test]
+        public void ItComplainsWhenPassingInEmptyTableName()
+        {
+            // g
+            const string tableName = "";
+            var fakeClient = FluentCyanHelper.GetFakeCyanClient();
+            var client = new FluentCyan<TemporaryObject>(fakeClient);
+
+            // w
+            Action act = () => client.FromTable(tableName);
+
+            // t
+            act.ShouldThrow<ArgumentNullException>();
+        }
+
+        [Test]
+        public void ItComplainsWhenPassingInInvalidTableName()
+        {
+            // g
+            const string tableName = "123";
+            var client = new FluentCyan<TemporaryObject>(FluentCyanHelper.GetCyanClient());
+
+            // w
+            Action act = () => client.FromTable(tableName);
+
+            // t
+            act.ShouldThrow<ArgumentException>();
+        }
+
+        [Test]
+        public void ItShouldReturnOK_WhenQueringForOneRecord_GivenRecordExists()
+        {
+            // g
+            var objectId = Guid.NewGuid().ToString();
+            var expected = new Response<TemporaryObject>(HttpStatusCode.OK, new TemporaryObject("PK", objectId) { Id = objectId });
+            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            table.Add(expected.Result);
+
+            var client = new FluentCyan<object>(FluentCyanHelper.GetCyanClient());
+
+            // w
+            var actual = client
+                .FromTable("TemporaryObject")
+                .Retrieve(objectId);
+
+            // t
+            actual.ShouldBeEquivalentTo(expected);
+        }
+
+
+        [SetUp]
+        public void Setup()
+        {
         }
 
         [TearDown]
         public void Teardown()
         {
-            var tobeDeleted = TableClient.GetAll();
+            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            var tobeDeleted = table.GetAll();
             foreach (var tableObject in tobeDeleted)
             {
-                TableClient.Delete(tableObject);
-            }  
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            var credentials = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["StorageConnectionString"]);
-            TableClient = new AzureTable<TemporaryObject>(credentials); 
-        }
-
-        [Test]
-        public void ItShouldReturnFound_WhenQueringForOneRecord_GivenRecordExists()
-        {
-            // g
-            var objectId = Guid.NewGuid().ToString();
-            var expected = new Response<TemporaryObject>(HttpStatusCode.OK, new TemporaryObject("PK", objectId) { Id = objectId });
-            TableClient.Add(expected.Result);
-
-            var client = new FluentCyan<object>();
-
-            // w
-            var actual = client.Retrieve(objectId);
-
-            // t
-            actual.ShouldBeEquivalentTo(expected);
-        }
-
-        class TemporaryObject : TableEntity
-        {
-            public TemporaryObject() { }
-            public TemporaryObject(string pk, string rk)
-            {
-                PartitionKey = pk;
-                RowKey = rk;
+                table.Delete(tableObject);
             }
-
-            public string Id { get; set; }
         }
+
+
     }
 }
