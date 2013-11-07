@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using Cyan.Fluent;
 using Cyan.Tests.Helpers;
@@ -93,9 +94,45 @@ namespace Cyan.Tests.Facade
             Assert.That(actual.Result.PartitionKey, Is.EqualTo(expected.Result.PartitionKey));
             Assert.That(actual.Result.RowKey, Is.EqualTo(expected.Result.RowKey));
             Assert.That(actual.Result.ETag.Replace(":", "%3A"), Is.EqualTo(expected.Result.ETag));
-            Assert.That((DateTimeOffset) (actual.Result.Timestamp), Is.EqualTo(expected.Result.Timestamp));
+            Assert.That((DateTimeOffset)(actual.Result.Timestamp), Is.EqualTo(expected.Result.Timestamp));
         }
 
+        [Test]
+        public void ItShouldReturnNotFound_WhenRetrievingAllRecords_GivenNoRecordsExists()
+        {
+            // g
+            var expected = new Response<TemporaryObject>(HttpStatusCode.NotFound, null);
+            var client = new FluentCyan<TemporaryObject>(FluentCyanHelper.GetCyanClient());
+
+            // w
+            var actual = client.FromTable("dummy")
+                               .RetrieveAll();
+
+            // t
+            actual.ShouldBeEquivalentTo(expected);
+        }
+
+        [Test]
+        public void ItShouldReturnOK_WhenQueringForAllRecords_GivenRecordsExists()
+        {
+            // g
+            var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = Guid.NewGuid().ToString() };
+            var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = Guid.NewGuid().ToString() };
+            var allObjects = new[] { item1, item2 };
+            var expected = new Response<TemporaryObject[]>(HttpStatusCode.OK, allObjects);
+            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            table.Add(item1);
+            table.Add(item2);
+
+            var client = new FluentCyan<object>(FluentCyanHelper.GetCyanClient());
+
+            // w
+            dynamic actual = client.FromTable("TemporaryObject").RetrieveAll();
+
+            // t
+            Assert.That(actual.Status, Is.EqualTo(expected.Status));
+            Assert.That(actual.Result.Length, Is.EqualTo(expected.Result.Length));
+        }
 
         [SetUp]
         public void Setup()

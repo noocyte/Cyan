@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Cyan.Interfaces;
@@ -36,6 +37,19 @@ namespace Cyan.Fluent
             if (resultEnumerable.Count() > 0)
                 return new Response<T>(HttpStatusCode.OK, resultEnumerable.First());
             return new Response<T>(HttpStatusCode.NotFound, null);
+        }
+
+        public Response<IEnumerable<T>> RetrieveAll()
+        {
+            var table = _tableClient[_tableName];
+
+            var result = table.Query("PK");
+            // ReSharper disable once CoVariantArrayConversion
+            dynamic[] resultEnumerable = result as dynamic[] ?? result.ToArray();
+            // ReSharper disable once UseMethodAny.0
+            if (resultEnumerable.Count() > 0)
+                return new Response<IEnumerable<T>>(HttpStatusCode.OK, resultEnumerable as IEnumerable<T>);
+            return new Response<IEnumerable<T>>(HttpStatusCode.NotFound, null);
         }
     }
 }
