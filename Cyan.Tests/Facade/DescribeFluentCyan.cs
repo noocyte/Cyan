@@ -20,9 +20,8 @@ namespace Cyan.Tests.Facade
             var client = new FluentCyan<TemporaryObject>(FluentCyanHelper.GetCyanClient());
 
             // w
-            var actual = client
-                .FromTable("dummy")
-                .Retrieve("123");
+            var actual = client.FromTable("dummy")
+                               .Retrieve("123");
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -89,6 +88,7 @@ namespace Cyan.Tests.Facade
                                    .Retrieve(objectId);
 
             // t
+            Assert.That(actual.Status, Is.EqualTo(expected.Status));
             Assert.That(actual.Result.Id, Is.EqualTo(expected.Result.Id));
             Assert.That(actual.Result.PartitionKey, Is.EqualTo(expected.Result.PartitionKey));
             Assert.That(actual.Result.RowKey, Is.EqualTo(expected.Result.RowKey));
