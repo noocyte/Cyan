@@ -1,18 +1,10 @@
 ﻿using System;
-using System.Configuration;
 using System.Net;
-using System.Web;
 using Cyan.Fluent;
-using Cyan.Policies;
 using Cyan.Tests.Helpers;
 using FakeItEasy;
 using FluentAssertions;
-using Microsoft.WindowsAzure;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Table;
 using NUnit.Framework;
-using UXRisk.Lib.Common.Services;
 
 namespace Cyan.Tests.Facade
 {
