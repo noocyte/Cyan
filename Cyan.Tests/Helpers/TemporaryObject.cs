@@ -12,5 +12,6 @@ namespace Cyan.Tests.Helpers
         }
 
         public string Id { get; set; }
+        public string SomeValue { get; set; }
     }
 }

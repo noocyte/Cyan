@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Cyan.Fluent;
 using Cyan.Tests.Helpers;
@@ -82,6 +83,7 @@ namespace Cyan.Tests.Facade
             var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
             table.Add(expected.Result);
 
+
             var client = new FluentCyan<object>(FluentCyanHelper.GetCyanClient());
 
             // w
@@ -116,18 +118,43 @@ namespace Cyan.Tests.Facade
         public void ItShouldReturnOK_WhenQueringForAllRecords_GivenRecordsExists()
         {
             // g
-            var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = Guid.NewGuid().ToString() };
-            var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = Guid.NewGuid().ToString() };
-            var allObjects = new[] { item1, item2 };
-            var expected = new Response<TemporaryObject[]>(HttpStatusCode.OK, allObjects);
+            var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = "item1" };
+            var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = "item2" };
             var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
             table.Add(item1);
             table.Add(item2);
 
-            var client = new FluentCyan<object>(FluentCyanHelper.GetCyanClient());
+            var allObjects = new[] { item1, item2 };
+            var expected = new Response<TemporaryObject[]>(HttpStatusCode.OK, allObjects);
+
+            var client = new FluentCyan<TemporaryObject>(FluentCyanHelper.GetCyanClient());
 
             // w
             dynamic actual = client.FromTable("TemporaryObject").RetrieveAll();
+
+            // t
+            Assert.That(actual.Status, Is.EqualTo(expected.Status));
+            Assert.That(actual.Result.Length, Is.EqualTo(expected.Result.Length));
+        }
+
+        [Test]
+        public void ItShouldReturnOK_WhenQueringWithFiltersForRecords_GivenRecordsExists()
+        {
+            // g
+            var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = "item1", SomeValue = "a" };
+            var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = "item2", SomeValue = "b" };
+            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            table.Add(item1);
+            table.Add(item2);
+
+            var filteredObjects = new[] { item2 };
+            var expected = new Response<TemporaryObject[]>(HttpStatusCode.OK, filteredObjects);
+
+            var client = new FluentCyan<TemporaryObject>(FluentCyanHelper.GetCyanClient());
+
+            // w
+            dynamic actual = client.FromTable("TemporaryObject")
+                                   .RetrieveBy(item => item.SomeValue == "b");
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
