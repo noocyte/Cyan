@@ -8,7 +8,7 @@ using Cyan.Interfaces;
 
 namespace Cyan.Fluent
 {
-    public class FluentCyan<T> where T : class
+    public class FluentCyan
     {
         private readonly ICyanClient _tableClient;
         private string _tableName;
@@ -18,7 +18,7 @@ namespace Cyan.Fluent
             _tableClient = tableClient;
         }
 
-        public FluentCyan<T> FromTable(string tableName)
+        public FluentCyan FromTable(string tableName)
         {
             if (String.IsNullOrEmpty(tableName))
                 throw new ArgumentNullException("tableName");
@@ -28,7 +28,7 @@ namespace Cyan.Fluent
             return this;
         }
 
-        public Response<T> Retrieve(string id)
+        public Response<CyanEntity> Retrieve(string id)
         {
             var table = _tableClient[_tableName];
 
@@ -37,39 +37,22 @@ namespace Cyan.Fluent
             dynamic[] resultEnumerable = result as dynamic[] ?? result.ToArray();
             // ReSharper disable once UseMethodAny.0
             return resultEnumerable.Count() > 0
-                    ? new Response<T>(HttpStatusCode.OK, resultEnumerable.First())
-                    : new Response<T>(HttpStatusCode.NotFound, null as T);
+                    ? new Response<CyanEntity>(HttpStatusCode.OK, resultEnumerable.First())
+                    : new Response<CyanEntity>(HttpStatusCode.NotFound, null);
         }
 
-        public Response<dynamic[]> RetrieveAll()
+        public Response<IEnumerable<CyanEntity>> RetrieveAll()
         {
             var table = _tableClient[_tableName];
 
             var result = table.Query("PK");
             // ReSharper disable once CoVariantArrayConversion
-            dynamic[] resultEnumerable = result as dynamic[] ?? result.ToArray();
+            var resultEnumerable = result as IEnumerable<CyanEntity>;
             // ReSharper disable once UseMethodAny.0
-            return resultEnumerable.Count() > 0
-                    ? new Response<dynamic[]>(HttpStatusCode.OK, resultEnumerable)
-                    : new Response<dynamic[]>(HttpStatusCode.NotFound, null as T[]);
+            var cyanEntities = resultEnumerable as CyanEntity[] ?? resultEnumerable.ToArray();
+            return cyanEntities.Count() > 0
+                    ? new Response<IEnumerable<CyanEntity>>(HttpStatusCode.OK, cyanEntities)
+                    : new Response<IEnumerable<CyanEntity>>(HttpStatusCode.NotFound, null);
         }
-
-        public Response<dynamic[]> RetrieveBy(Func<dynamic, bool> predicate)
-        {
-            var table = _tableClient[_tableName];
-
-            var result = table.Query("PK");
-            // ReSharper disable once CoVariantArrayConversion
-            dynamic[] resultEnumerable = result as dynamic[] ?? result.ToArray();
-            // ReSharper disable once UseMethodAny.0
-            if (resultEnumerable.Count(item => predicate(item)) > 0)
-            {
-                dynamic[] enumerable = resultEnumerable.Where(i=>predicate(i)).ToArray();
-                return new Response<dynamic[]>(HttpStatusCode.OK, enumerable);
-            }
-
-            else return new Response<dynamic[]>(HttpStatusCode.NotFound, null as T[]);
-        }
-
     }
 }

@@ -34,7 +34,7 @@ namespace Cyan
         /// <param name="disableContinuation">If <code>true</code> disables automatic query continuation.</param>
         /// <param name="fields">Names of the properties to be returned.</param>
         /// <returns>Entities matching your query.</returns>
-        public IEnumerable<dynamic> Query(string partition = null,
+        public IEnumerable<CyanEntity> Query(string partition = null,
             string row = null,
             string filter = null,
             int top = 0,
@@ -89,26 +89,26 @@ namespace Cyan
         /// </summary>
         /// <param name="entity">The entity to be inserted.</param>
         /// <returns>The entity that has been inserted.</returns>
-        public dynamic Insert(object entity)
+        public CyanEntity Insert(CyanEntity entity)
         {
-            dynamic ret;
+            CyanEntity ret;
             InsertImpl(entity, out ret, true);
 
             return ret;
         }
 
-        public bool TryInsert(object entity)
+        public bool TryInsert(CyanEntity entity)
         {
-            dynamic dummy;
+            CyanEntity dummy;
             return TryInsert(entity, out dummy);
         }
 
-        public bool TryInsert(object entity, out dynamic insertedEntity)
+        public bool TryInsert(CyanEntity entity, out CyanEntity insertedEntity)
         {
             return InsertImpl(entity, out insertedEntity, false);
         }
 
-        private bool InsertImpl(object entity, out dynamic insertedEntity, bool throwOnConflict)
+        private bool InsertImpl(CyanEntity entity, out CyanEntity insertedEntity, bool throwOnConflict)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
@@ -134,7 +134,7 @@ namespace Cyan
         /// </summary>
         /// <param name="entity">The entity to be updated.</param>
         /// <param name="unconditionalUpdate">If set to <code>true</code> optimistic concurrency is off.</param>
-        public void Update(object entity, bool unconditionalUpdate = false)
+        public void Update(CyanEntity entity, bool unconditionalUpdate = false)
         {
             UpdateImpl(entity, true, unconditionalUpdate);
         }
@@ -144,12 +144,12 @@ namespace Cyan
         /// </summary>
         /// <param name="entity">The entity to be updated.</param>
         /// <returns><code>true</code> if the entity ETag matches.</returns>
-        public bool TryUpdate(object entity)
+        public bool TryUpdate(CyanEntity entity)
         {
             return UpdateImpl(entity, false, false);
         }
 
-        private bool UpdateImpl(object entity, bool throwOnPreconditionFailure, bool unconditionalUpdate)
+        private bool UpdateImpl(CyanEntity entity, bool throwOnPreconditionFailure, bool unconditionalUpdate)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
@@ -183,7 +183,7 @@ namespace Cyan
         /// <param name="entity">The entity to be updated.</param>
         /// <param name="unconditionalUpdate">If set to <code>true</code> optimistic concurrency is off.</param>
         /// <param name="fields">The name of the fields to be updated.</param>
-        public void Merge(object entity, bool unconditionalUpdate = false, params string[] fields)
+        public void Merge(CyanEntity entity, bool unconditionalUpdate = false, params string[] fields)
         {
             MergeImpl(entity, true, unconditionalUpdate);
         }
@@ -194,12 +194,12 @@ namespace Cyan
         /// <param name="entity">The entity to be updated.</param>
         /// <param name="fields">The name of the fields to be updated.</param>
         /// <returns><code>true</code> if the entity ETag matches.</returns>
-        public bool TryMerge(object entity, params string[] fields)
+        public bool TryMerge(CyanEntity entity, params string[] fields)
         {
             return MergeImpl(entity, false, false, fields);
         }
 
-        private bool MergeImpl(object entity, bool throwOnPreconditionFailure, bool unconditionalUpdate,
+        private bool MergeImpl(CyanEntity entity, bool throwOnPreconditionFailure, bool unconditionalUpdate,
             params string[] fields)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
@@ -237,7 +237,7 @@ namespace Cyan
         /// </summary>
         /// <param name="entity">The entity to be deleted.</param>
         /// <param name="unconditionalUpdate">If set to <code>true</code> optimistic concurrency is off.</param>
-        public void Delete(object entity, bool unconditionalUpdate = false)
+        public void Delete(CyanEntity entity, bool unconditionalUpdate = false)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
@@ -260,7 +260,7 @@ namespace Cyan
             response.ThrowIfFailed();
         }
 
-        public dynamic InsertOrUpdate(object entity)
+        public CyanEntity InsertOrUpdate(CyanEntity entity)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
@@ -281,7 +281,7 @@ namespace Cyan
             return cyanEntity;
         }
 
-        public dynamic InsertOrMerge(object entity, params string[] fields)
+        public CyanEntity InsertOrMerge(CyanEntity entity, params string[] fields)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 

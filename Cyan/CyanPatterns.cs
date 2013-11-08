@@ -6,13 +6,13 @@ namespace Cyan
 {
     public static class CyanPatterns
     {
-        public static dynamic InsertOrUpdate(this CyanTable table,
+        public static CyanEntity InsertOrUpdate(this CyanTable table,
             string partitionKey,
             string rowKey,
-            Func<object> entityProvider,
-            Action<dynamic> entityModifier)
+            Func<CyanEntity> entityProvider,
+            Action<CyanEntity> entityModifier)
         {
-            dynamic entity;
+            CyanEntity entity;
             bool success;
             do
             {
@@ -46,10 +46,10 @@ namespace Cyan
         public static dynamic InsertOrMerge(this CyanTable table,
             string partitionKey,
             string rowKey,
-            Func<object> entityProvider,
-            Action<dynamic> entityModifier, params string[] fields)
+            Func<CyanEntity> entityProvider,
+            Action<CyanEntity> entityModifier, params string[] fields)
         {
-            dynamic entity;
+            CyanEntity entity;
             bool success;
             do
             {
@@ -86,7 +86,7 @@ namespace Cyan
             Action<dynamic> entityModifier)
         {
             bool success;
-            dynamic entity;
+            CyanEntity entity;
             do
             {
                 entity = table.Query(partitionKey, rowKey).FirstOrDefault();
@@ -104,11 +104,11 @@ namespace Cyan
             bool unconditionalUpdate = false)
         {
             bool success;
-            List<dynamic> ret;
+            List<CyanEntity> ret;
             do
             {
                 var toUpdate = entityModifier(table);
-                ret = new List<dynamic>();
+                ret = new List<CyanEntity>();
 
                 var batch = table.Batch();
                 foreach (var item in toUpdate)
