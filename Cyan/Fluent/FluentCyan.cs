@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
 using Cyan.Interfaces;
 
 namespace Cyan.Fluent
@@ -37,8 +35,8 @@ namespace Cyan.Fluent
             dynamic[] resultEnumerable = result as dynamic[] ?? result.ToArray();
             // ReSharper disable once UseMethodAny.0
             return resultEnumerable.Count() > 0
-                    ? new Response<CyanEntity>(HttpStatusCode.OK, resultEnumerable.First())
-                    : new Response<CyanEntity>(HttpStatusCode.NotFound, null);
+                ? new Response<CyanEntity>(HttpStatusCode.OK, resultEnumerable.First())
+                : new Response<CyanEntity>(HttpStatusCode.NotFound, null);
         }
 
         public Response<IEnumerable<CyanEntity>> RetrieveAll()
@@ -51,8 +49,8 @@ namespace Cyan.Fluent
             // ReSharper disable once UseMethodAny.0
             var cyanEntities = resultEnumerable as CyanEntity[] ?? resultEnumerable.ToArray();
             return cyanEntities.Count() > 0
-                    ? new Response<IEnumerable<CyanEntity>>(HttpStatusCode.OK, cyanEntities)
-                    : new Response<IEnumerable<CyanEntity>>(HttpStatusCode.NotFound, null);
+                ? new Response<IEnumerable<CyanEntity>>(HttpStatusCode.OK, cyanEntities)
+                : new Response<IEnumerable<CyanEntity>>(HttpStatusCode.NotFound, null);
         }
     }
 }
