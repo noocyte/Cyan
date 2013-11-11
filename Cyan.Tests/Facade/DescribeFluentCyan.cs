@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using Cyan.Fluent;
 using Cyan.Tests.Helpers;
@@ -87,6 +88,19 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
+        public void ItComplains_WhenQueryingForOneRecord_GivenInvalidID()
+        {
+            // g
+            var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
+
+            // w
+            Action act = () => client.FromTable("dummy").Retrieve(null);
+
+            // t
+            act.ShouldThrow<ArgumentNullException>();
+        }
+
+        [Test]
         public void ItShouldReturnNotFound_WhenRetrievingAllRecords_GivenNoRecordsExists()
         {
             // g
@@ -105,23 +119,23 @@ namespace Cyan.Tests.Facade
         public void ItShouldReturnOK_WhenQueringForAllRecords_GivenRecordsExists()
         {
             // g
-            var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) {Id = "item1"};
-            var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) {Id = "item2"};
+            var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = "item1" };
+            var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = "item2" };
             var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
             table.Add(item1);
             table.Add(item2);
 
-            var allObjects = new[] {item1, item2};
+            var allObjects = new[] { item1, item2 };
             var expected = new Response<TemporaryObject[]>(HttpStatusCode.OK, allObjects);
 
             var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            dynamic actual = client.FromTable("TemporaryObject").RetrieveAll();
+            var actual = client.FromTable("TemporaryObject").RetrieveAll();
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
-            Assert.That(actual.Result.Length, Is.EqualTo(expected.Result.Length));
+            Assert.That(actual.Result.Count(), Is.EqualTo(expected.Result.Count()));
         }
 
         [Test]
@@ -130,7 +144,7 @@ namespace Cyan.Tests.Facade
             // g
             var objectId = Guid.NewGuid().ToString();
             var expected = new Response<TemporaryObject>(HttpStatusCode.OK,
-                new TemporaryObject("PK", objectId) {Id = objectId});
+                new TemporaryObject("PK", objectId) { Id = objectId });
             var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
             table.Add(expected.Result);
 
@@ -147,7 +161,7 @@ namespace Cyan.Tests.Facade
             Assert.That(actual.Result.PartitionKey, Is.EqualTo(expected.Result.PartitionKey));
             Assert.That(actual.Result.RowKey, Is.EqualTo(expected.Result.RowKey));
             Assert.That(actual.Result.ETag.Replace(":", "%3A"), Is.EqualTo(expected.Result.ETag));
-            Assert.That((DateTimeOffset) (actual.Result.Timestamp), Is.EqualTo(expected.Result.Timestamp));
+            Assert.That((DateTimeOffset)(actual.Result.Timestamp), Is.EqualTo(expected.Result.Timestamp));
         }
     }
 }

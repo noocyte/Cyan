@@ -28,28 +28,23 @@ namespace Cyan.Fluent
 
         public Response<CyanEntity> Retrieve(string id)
         {
-            var table = _tableClient[_tableName];
+            if (string.IsNullOrEmpty(id)) throw new ArgumentNullException("id");
 
-            var result = table.Query("PK", id);
-            // ReSharper disable once CoVariantArrayConversion
-            dynamic[] resultEnumerable = result as dynamic[] ?? result.ToArray();
-            // ReSharper disable once UseMethodAny.0
-            return resultEnumerable.Count() > 0
-                ? new Response<CyanEntity>(HttpStatusCode.OK, resultEnumerable.First())
+            var table = _tableClient[_tableName];
+            var result = table.Query("PK", id).ToList();
+
+            return result.Count() > 0
+                ? new Response<CyanEntity>(HttpStatusCode.OK, result.First())
                 : new Response<CyanEntity>(HttpStatusCode.NotFound, null);
         }
 
         public Response<IEnumerable<CyanEntity>> RetrieveAll()
         {
             var table = _tableClient[_tableName];
+            var result = table.Query("PK").ToList();
 
-            var result = table.Query("PK");
-            // ReSharper disable once CoVariantArrayConversion
-            var resultEnumerable = result as IEnumerable<CyanEntity>;
-            // ReSharper disable once UseMethodAny.0
-            var cyanEntities = resultEnumerable as CyanEntity[] ?? resultEnumerable.ToArray();
-            return cyanEntities.Count() > 0
-                ? new Response<IEnumerable<CyanEntity>>(HttpStatusCode.OK, cyanEntities)
+            return result.Count() > 0
+                ? new Response<IEnumerable<CyanEntity>>(HttpStatusCode.OK, result)
                 : new Response<IEnumerable<CyanEntity>>(HttpStatusCode.NotFound, null);
         }
     }
