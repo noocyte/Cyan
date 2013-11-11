@@ -34,6 +34,7 @@ namespace Cyan.Fluent
             var table = _tableClient[_tableName];
             var result = table.Query("PK", id).ToList();
 
+            // ReSharper disable once UseMethodAny.0
             return result.Count() > 0
                 ? new Response<CyanEntity>(HttpStatusCode.OK, result.First())
                 : new Response<CyanEntity>(HttpStatusCode.NotFound, null);
@@ -44,6 +45,7 @@ namespace Cyan.Fluent
             var table = _tableClient[_tableName];
             var result = table.Query("PK").ToList();
 
+            // ReSharper disable once UseMethodAny.0
             return result.Count() > 0
                 ? new Response<IEnumerable<CyanEntity>>(HttpStatusCode.OK, result)
                 : new Response<IEnumerable<CyanEntity>>(HttpStatusCode.NotFound, null);
