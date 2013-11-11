@@ -80,8 +80,7 @@ namespace Cyan.Tests.Facade
             var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            var actual = client.FromTable("dummy")
-                .Retrieve("123");
+            var actual = client.FromTable("dummy").Retrieve("123");
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -108,8 +107,7 @@ namespace Cyan.Tests.Facade
             var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            var actual = client.FromTable("dummy")
-                .RetrieveAll();
+            var actual = client.FromTable("dummy").RetrieveAll();
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -152,8 +150,7 @@ namespace Cyan.Tests.Facade
             var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            dynamic actual = client.FromTable("TemporaryObject")
-                .Retrieve(objectId);
+            dynamic actual = client.FromTable("TemporaryObject").Retrieve(objectId);
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));

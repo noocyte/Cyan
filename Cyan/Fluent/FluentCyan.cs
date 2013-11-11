@@ -28,7 +28,8 @@ namespace Cyan.Fluent
 
         public Response<CyanEntity> Retrieve(string id)
         {
-            if (string.IsNullOrEmpty(id)) throw new ArgumentNullException("id");
+            if (string.IsNullOrEmpty(id)) 
+                throw new ArgumentNullException("id");
 
             var table = _tableClient[_tableName];
             var result = table.Query("PK", id).ToList();
