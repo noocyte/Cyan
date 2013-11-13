@@ -1,4 +1,6 @@
-﻿namespace Cyan.Interfaces
+﻿using System.Threading.Tasks;
+
+namespace Cyan.Interfaces
 {
     public interface ICyanEGT
     {
@@ -9,6 +11,6 @@
         void Delete(object entity, bool unconditionalUpdate = false);
         void Delete(string partitionKey, string rowKey, string eTag = null);
         void Commit();
-        bool TryCommit();
+        Task<bool> TryCommit();
     }
 }

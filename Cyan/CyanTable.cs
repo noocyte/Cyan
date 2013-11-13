@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Web;
 using Cyan.Interfaces;
 
@@ -34,7 +35,7 @@ namespace Cyan
         /// <param name="disableContinuation">If <code>true</code> disables automatic query continuation.</param>
         /// <param name="fields">Names of the properties to be returned.</param>
         /// <returns>Entities matching your query.</returns>
-        public IEnumerable<CyanEntity> Query(string partition = null,
+        public async Task<IEnumerable<CyanEntity>> Query(string partition = null,
             string row = null,
             string filter = null,
             int top = 0,
@@ -49,20 +50,22 @@ namespace Cyan
             bool hasContinuation;
             string nextPartition = null;
             string nextRow = null;
+            var entityList = new List<CyanEntity>();
+
             do
             {
                 var query = FormatQuery(partition, row, filter, top, fields, nextPartition, nextRow);
 
-                var response = RestClient.GetRequest(resource, query);
+                var response = await RestClient.GetRequest(resource, query);
 
                 if (single)
                 {
                     // should not throw NotFound, should return empty
                     if (response.StatusCode == HttpStatusCode.NotFound)
-                        yield break;
+                        break;
 
                     response.ThrowIfFailed();
-                    yield return CyanSerializer.DeserializeEntity(response.ResponseBody.Root);
+                    entityList.Add(CyanSerializer.DeserializeEntity(response.ResponseBody.Root));
                 }
 
                 response.ThrowIfFailed();
@@ -74,7 +77,7 @@ namespace Cyan
                 var entities = CyanSerializer.DeserializeEntities(response.ResponseBody.Root);
                 foreach (var entity in entities)
                 {
-                    yield return entity;
+                    entityList.Add(entity);
                     if (top > 0 && ++returned >= top)
                         break;
                 }
@@ -82,6 +85,8 @@ namespace Cyan
                      && hasContinuation // the response has a valid continuation
                      && !(top > 0 && returned >= top));
             // if there is a top argument and we didn't return enough entities
+
+            return entityList;
         }
 
         /// <summary>
@@ -89,148 +94,137 @@ namespace Cyan
         /// </summary>
         /// <param name="entity">The entity to be inserted.</param>
         /// <returns>The entity that has been inserted.</returns>
-        public CyanEntity Insert(CyanEntity entity)
+        public async Task<CyanEntity> Insert(CyanEntity entity)
         {
-            CyanEntity ret;
-            InsertImpl(entity, out ret, true);
-
-            return ret;
+            return await InsertImpl(entity, true);
         }
 
-        public bool TryInsert(CyanEntity entity)
+        public async Task<CyanEntity> TryInsert(CyanEntity entity)
         {
-            CyanEntity dummy;
-            return TryInsert(entity, out dummy);
+            return await InsertImpl(entity, false);
         }
 
-        public bool TryInsert(CyanEntity entity, out CyanEntity insertedEntity)
-        {
-            return InsertImpl(entity, out insertedEntity, false);
-        }
-
-        private bool InsertImpl(CyanEntity entity, out CyanEntity insertedEntity, bool throwOnConflict)
+        private async Task<CyanEntity> InsertImpl(CyanEntity entity, bool throwOnConflict)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
             var document = cyanEntity.Serialize();
 
-            var response = RestClient.PostRequest(TableName, document.ToString());
+            var response = await RestClient.PostRequest(TableName, document.ToString());
 
             if (response.StatusCode == HttpStatusCode.Conflict
                 && !throwOnConflict)
             {
-                insertedEntity = null;
-                return false;
+                return null;
             }
 
             response.ThrowIfFailed();
 
-            insertedEntity = CyanSerializer.DeserializeEntity(response.ResponseBody.Root);
-            return true;
+            return CyanSerializer.DeserializeEntity(response.ResponseBody.Root);
         }
 
-        /// <summary>
-        /// Updates an existing entity in a table replacing it.
-        /// </summary>
-        /// <param name="entity">The entity to be updated.</param>
-        /// <param name="unconditionalUpdate">If set to <code>true</code> optimistic concurrency is off.</param>
-        public void Update(CyanEntity entity, bool unconditionalUpdate = false)
-        {
-            UpdateImpl(entity, true, unconditionalUpdate);
-        }
+        ///// <summary>
+        ///// Updates an existing entity in a table replacing it.
+        ///// </summary>
+        ///// <param name="entity">The entity to be updated.</param>
+        ///// <param name="unconditionalUpdate">If set to <code>true</code> optimistic concurrency is off.</param>
+        //public void Update(CyanEntity entity, bool unconditionalUpdate = false)
+        //{
+        //    UpdateImpl(entity, true, unconditionalUpdate);
+        //}
 
-        /// <summary>
-        /// Tries to update an existing entity in a table replacing it.
-        /// </summary>
-        /// <param name="entity">The entity to be updated.</param>
-        /// <returns><code>true</code> if the entity ETag matches.</returns>
-        public bool TryUpdate(CyanEntity entity)
-        {
-            return UpdateImpl(entity, false, false);
-        }
+        ///// <summary>
+        ///// Tries to update an existing entity in a table replacing it.
+        ///// </summary>
+        ///// <param name="entity">The entity to be updated.</param>
+        ///// <returns><code>true</code> if the entity ETag matches.</returns>
+        //public async Task<bool> TryUpdate(CyanEntity entity)
+        //{
+        //    return await UpdateImpl(entity, false, false);
+        //}
 
-        private bool UpdateImpl(CyanEntity entity, bool throwOnPreconditionFailure, bool unconditionalUpdate)
-        {
-            var cyanEntity = CyanEntity.FromObject(entity);
+        //private async Task<bool> UpdateImpl(CyanEntity entity, bool throwOnPreconditionFailure, bool unconditionalUpdate)
+        //{
+        //    var cyanEntity = CyanEntity.FromObject(entity);
 
-            var partition = cyanEntity.PartitionKey;
-            var row = cyanEntity.RowKey;
-            var eTag = cyanEntity.ETag;
+        //    var partition = cyanEntity.PartitionKey;
+        //    var row = cyanEntity.RowKey;
+        //    var eTag = cyanEntity.ETag;
 
-            var document = cyanEntity.Serialize();
+        //    var document = cyanEntity.Serialize();
 
-            var resource = FormatResource(partition, row);
+        //    var resource = FormatResource(partition, row);
 
-            var response = RestClient.PutRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
+        //    var response = await RestClient.PutRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
 
-            // update entity etag for future updates
-            string newETag;
-            if (response.Headers.TryGetValue("ETag", out newETag))
-                cyanEntity.ETag = HttpUtility.UrlDecode(newETag);
+        //    // update entity etag for future updates
+        //    string newETag;
+        //    if (response.Headers.TryGetValue("ETag", out newETag))
+        //        cyanEntity.ETag = HttpUtility.UrlDecode(newETag);
 
-            if (!throwOnPreconditionFailure
-                && !unconditionalUpdate
-                && response.PreconditionFailed)
-                return false;
+        //    if (!throwOnPreconditionFailure
+        //        && !unconditionalUpdate
+        //        && response.PreconditionFailed)
+        //        return false;
 
-            response.ThrowIfFailed();
-            return true;
-        }
+        //    response.ThrowIfFailed();
+        //    return true;
+        //}
 
-        /// <summary>
-        /// Updates an existing entity in a table by updating the entity's properties.
-        /// </summary>
-        /// <param name="entity">The entity to be updated.</param>
-        /// <param name="unconditionalUpdate">If set to <code>true</code> optimistic concurrency is off.</param>
-        /// <param name="fields">The name of the fields to be updated.</param>
-        public void Merge(CyanEntity entity, bool unconditionalUpdate = false, params string[] fields)
-        {
-            MergeImpl(entity, true, unconditionalUpdate);
-        }
+        ///// <summary>
+        ///// Updates an existing entity in a table by updating the entity's properties.
+        ///// </summary>
+        ///// <param name="entity">The entity to be updated.</param>
+        ///// <param name="unconditionalUpdate">If set to <code>true</code> optimistic concurrency is off.</param>
+        ///// <param name="fields">The name of the fields to be updated.</param>
+        //public void Merge(CyanEntity entity, bool unconditionalUpdate = false, params string[] fields)
+        //{
+        //    MergeImpl(entity, true, unconditionalUpdate);
+        //}
 
-        /// <summary>
-        /// Tries to update an existing entity in a table by updating the entity's properties.
-        /// </summary>
-        /// <param name="entity">The entity to be updated.</param>
-        /// <param name="fields">The name of the fields to be updated.</param>
-        /// <returns><code>true</code> if the entity ETag matches.</returns>
-        public bool TryMerge(CyanEntity entity, params string[] fields)
-        {
-            return MergeImpl(entity, false, false, fields);
-        }
+        ///// <summary>
+        ///// Tries to update an existing entity in a table by updating the entity's properties.
+        ///// </summary>
+        ///// <param name="entity">The entity to be updated.</param>
+        ///// <param name="fields">The name of the fields to be updated.</param>
+        ///// <returns><code>true</code> if the entity ETag matches.</returns>
+        //public async Task<CyanEntity> TryMerge(CyanEntity entity, params string[] fields)
+        //{
+        //    return await MergeImpl(entity, false, false, fields);
+        //}
 
-        private bool MergeImpl(CyanEntity entity, bool throwOnPreconditionFailure, bool unconditionalUpdate,
-            params string[] fields)
-        {
-            var cyanEntity = CyanEntity.FromObject(entity);
+        //private async Task<CyanEntity> MergeImpl(CyanEntity entity, bool throwOnPreconditionFailure, bool unconditionalUpdate,
+        //    params string[] fields)
+        //{
+        //    var cyanEntity = CyanEntity.FromObject(entity);
 
-            var partition = cyanEntity.PartitionKey;
-            var row = cyanEntity.RowKey;
-            var eTag = cyanEntity.ETag;
+        //    var partition = cyanEntity.PartitionKey;
+        //    var row = cyanEntity.RowKey;
+        //    var eTag = cyanEntity.ETag;
 
-            var filteredEntity = (fields != null && fields.Length > 0)
-                ? CyanEntity.FromEntity(cyanEntity, fields)
-                : cyanEntity;
+        //    var filteredEntity = (fields != null && fields.Length > 0)
+        //        ? CyanEntity.FromEntity(cyanEntity, fields)
+        //        : cyanEntity;
 
-            var document = filteredEntity.Serialize();
+        //    var document = filteredEntity.Serialize();
 
-            var resource = FormatResource(partition, row);
+        //    var resource = FormatResource(partition, row);
 
-            var response = RestClient.MergeRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
+        //    var response = await RestClient.MergeRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
 
-            // update entity etag for future updates
-            string newETag;
-            if (response.Headers.TryGetValue("ETag", out newETag))
-                cyanEntity.ETag = HttpUtility.UrlDecode(newETag);
+        //    // update entity etag for future updates
+        //    string newETag;
+        //    if (response.Headers.TryGetValue("ETag", out newETag))
+        //        cyanEntity.ETag = HttpUtility.UrlDecode(newETag);
 
-            if (!throwOnPreconditionFailure
-                && !unconditionalUpdate
-                && response.PreconditionFailed)
-                return false;
+        //    if (!throwOnPreconditionFailure
+        //        && !unconditionalUpdate
+        //        && response.PreconditionFailed)
+        //        return false;
 
-            response.ThrowIfFailed();
-            return true;
-        }
+        //    response.ThrowIfFailed();
+        //    return true;
+        //}
 
         /// <summary>
         /// Deletes an existing entity from a table.
@@ -252,15 +246,15 @@ namespace Cyan
         /// <param name="partition">The partition-key of the entity to be deleted.</param>
         /// <param name="row">The row-key of the entity to be deleted.</param>
         /// <param name="eTag">The ETag to be passed as "If-Match" header. Omit or <code>null</code> for "*".</param>
-        public void Delete(string partition, string row, string eTag = null)
+        public async void Delete(string partition, string row, string eTag = null)
         {
             var resource = FormatResource(partition, row);
 
-            var response = RestClient.DeleteRequest(resource, eTag);
+            var response = await RestClient.DeleteRequest(resource, eTag);
             response.ThrowIfFailed();
         }
 
-        public CyanEntity InsertOrUpdate(CyanEntity entity)
+        public async Task<CyanEntity> InsertOrUpdate(CyanEntity entity)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
@@ -270,7 +264,7 @@ namespace Cyan
             var document = cyanEntity.Serialize();
             var resource = FormatResource(partition, row);
 
-            var response = RestClient.PutRequest(resource, document.ToString());
+            var response = await RestClient.PutRequest(resource, document.ToString());
             response.ThrowIfFailed();
 
             // update entity etag for future updates
@@ -281,7 +275,7 @@ namespace Cyan
             return cyanEntity;
         }
 
-        public CyanEntity InsertOrMerge(CyanEntity entity, params string[] fields)
+        public async Task<CyanEntity> InsertOrMerge(CyanEntity entity, params string[] fields)
         {
             var cyanEntity = CyanEntity.FromObject(entity);
 
@@ -295,7 +289,7 @@ namespace Cyan
             var document = filteredEntity.Serialize();
             var resource = FormatResource(partition, row);
 
-            var response = RestClient.MergeRequest(resource, document.ToString());
+            var response = await RestClient.MergeRequest(resource, document.ToString());
             response.ThrowIfFailed();
 
             // update entity etag for future updates

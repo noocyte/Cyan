@@ -84,7 +84,7 @@ namespace Cyan.Tests.Facade
             var expected = new Response<JsonObject>(HttpStatusCode.NotFound, new JsonObject());
 
             // w
-            var actual = _client.FromTable("dummy").Retrieve("123");
+            var actual = _client.FromTable("dummy").RetrieveAsync("123");
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -96,7 +96,7 @@ namespace Cyan.Tests.Facade
             // g
 
             // w
-            Action act = () => _client.FromTable("dummy").Retrieve(null);
+            Action act = () => _client.FromTable("dummy").RetrieveAsync(null);
 
             // t
             act.ShouldThrow<ArgumentNullException>();
@@ -109,14 +109,14 @@ namespace Cyan.Tests.Facade
             var expected = new Response<IEnumerable<JsonObject>>(HttpStatusCode.NotFound, new List<JsonObject>());
 
             // w
-            var actual = _client.FromTable("dummy").RetrieveAll();
+            var actual = _client.FromTable("dummy").RetrieveAllAsync();
 
             // t
             actual.ShouldBeEquivalentTo(expected);
         }
 
         [Test]
-        public void ItShouldReturnOK_WhenQueringForAllRecords_GivenRecordsExists()
+        public async void ItShouldReturnOK_WhenQueringForAllRecords_GivenRecordsExists()
         {
             // g
             var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { id = "item1" };
@@ -129,7 +129,7 @@ namespace Cyan.Tests.Facade
             var expected = new Response<TemporaryObject[]>(HttpStatusCode.OK, allObjects);
 
             // w
-            var actual = _client.FromTable(TableName).RetrieveAll();
+            var actual = await _client.FromTable(TableName).RetrieveAllAsync();
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
@@ -137,7 +137,7 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
-        public void ItShouldReturnOK_WhenQueringForOneRecord_GivenRecordExists()
+        public async void ItShouldReturnOK_WhenQueringForOneRecord_GivenRecordExists()
         {
             // g
             var objectId = Guid.NewGuid().ToString();
@@ -151,7 +151,7 @@ namespace Cyan.Tests.Facade
             var expected = new Response<JsonObject>(HttpStatusCode.OK, json);
 
             // w
-            var actual = _client.FromTable(TableName).Retrieve(objectId);
+            var actual = await _client.FromTable(TableName).RetrieveAsync(objectId);
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
@@ -166,23 +166,24 @@ namespace Cyan.Tests.Facade
             // g
 
             // w
-            Action act = () => _client.IntoTable("dummy").Post(null);
+            Action act = () => _client.IntoTable("dummy").PostAsync(null);
 
             // t
             act.ShouldThrow<ArgumentNullException>();
         }
 
         [Test]
-        public void ItShouldPostOneRecord_GivenValidJsonObject()
+        public async void ItShouldPostOneRecord_GivenValidJsonObject()
         {
             // g 
             var json = JsonObjectFactory.CreateJsonObjectForPost();
 
             // w
-            var response = _client.IntoTable(TableName).Post(json);
+            var response = await _client.IntoTable(TableName).PostAsync(json);
 
             // t
-            _client.FromTable(TableName).RetrieveAll().Result.Count().Should().Be(1);
+            var allResponses = await _client.FromTable(TableName).RetrieveAllAsync();
+            allResponses.Result.Count().Should().Be(1);
             response.Status.Should().Be(HttpStatusCode.Created);
             response.Result.Id.Should().NotBeEmpty();
         }

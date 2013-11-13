@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using Cyan.Interfaces;
 
@@ -77,12 +78,12 @@ namespace Cyan
                 Tuple.Create("If-Match", eTag ?? "*"));
         }
 
-        public void Commit()
+        public async void Commit()
         {
             var batchBoundary = string.Format("batch_{0}", Guid.NewGuid());
             var requestBody = EncodeBatchRequestBody(batchBoundary);
 
-            var response = _table.RestClient.BatchRequest(batchBoundary, requestBody);
+            var response = await _table.RestClient.BatchRequest(batchBoundary, requestBody);
 
             response.ThrowIfFailed();
 
@@ -98,7 +99,7 @@ namespace Cyan
             }
         }
 
-        public bool TryCommit()
+        public async Task<bool> TryCommit()
         {
             if (_operations.Count == 0)
                 return true;
@@ -106,7 +107,7 @@ namespace Cyan
             var batchBoundary = string.Format("batch_{0}", Guid.NewGuid());
             var requestBody = EncodeBatchRequestBody(batchBoundary);
 
-            var response = _table.RestClient.BatchRequest(batchBoundary, requestBody);
+            var response = await _table.RestClient.BatchRequest(batchBoundary, requestBody);
 
             if (response.StatusCode != HttpStatusCode.Accepted)
                 response.ThrowIfFailed();

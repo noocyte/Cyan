@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Cyan.Interfaces;
 using UXRisk.Lib.Common.Models;
 
@@ -28,29 +29,30 @@ namespace Cyan.Fluent
                 throw new ArgumentNullException("tableName");
 
             _tableName = tableName;
-            _tableClient.TryCreateTable(_tableName);
+            var created = _tableClient.CreateTable(_tableName).Result;
             return this;
         }
 
-        public Response<JsonObject> Post(JsonObject json)
+        public async Task<Response<JsonObject>> PostAsync(JsonObject json)
         {
             if (json == null)
                 throw new ArgumentNullException("json");
 
             var table = _tableClient[_tableName];
             var entity = json.ToCyanEntity();
-            var result = table.Insert(entity);
+            var result = await table.Insert(entity);
 
             return new Response<JsonObject>(HttpStatusCode.Created, result.ToJsonObject());
         }
 
-        public Response<JsonObject> Retrieve(string id)
+        public async Task<Response<JsonObject>> RetrieveAsync(string id)
         {
             if (string.IsNullOrEmpty(id))
                 throw new ArgumentNullException("id");
 
             var table = _tableClient[_tableName];
-            var result = table.Query("PK", id).ToList();
+            var items = await table.Query("PK", id);
+            var result = items.ToList();
             var json = new JsonObject();
             var status = HttpStatusCode.NotFound;
 
@@ -64,10 +66,11 @@ namespace Cyan.Fluent
             return new Response<JsonObject>(status, json);
         }
 
-        public Response<IEnumerable<JsonObject>> RetrieveAll()
+        public async  Task<Response<IEnumerable<JsonObject>>> RetrieveAllAsync()
         {
             var table = _tableClient[_tableName];
-            var result = table.Query("PK").ToList();
+            var items = await table.Query("PK");
+            var result = items.ToList();
 
             var status = HttpStatusCode.NotFound;
             var listOfJson = new List<JsonObject>();

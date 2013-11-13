@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Cyan.Interfaces;
 using Cyan.Policies;
 
@@ -92,48 +94,39 @@ namespace Cyan
         /// </summary>
         /// <param name="disableContinuation">If <code>true</code> disables automatic query continuation.</param>
         /// <returns>Returns an enumeration of table names.</returns>
-        public IEnumerable<string> QueryTables(bool disableContinuation = false)
+        public async Task<IEnumerable<string>> QueryTables(bool disableContinuation = false)
         {
             bool hasContinuation = false;
             string nextTable = null;
+            var tableNames = new List<string>();
             do
             {
                 var query = hasContinuation ? string.Format("NextTableName={0}", nextTable) : null;
 
-                var response = RestClient.GetRequest("Tables", query);
+                var response = await RestClient.GetRequest("Tables", query);
                 response.ThrowIfFailed();
 
                 hasContinuation = response.Headers.TryGetValue("x-ms-continuation-NextTableName", out nextTable);
 
                 var entities = CyanSerializer.DeserializeEntities(response.ResponseBody.Root);
-                foreach (var entity in entities)
-                    yield return entity.TableName;
+
+                tableNames.AddRange(entities.Select(entity => entity.TableName).Cast<string>());
+
             } while (!disableContinuation && hasContinuation);
+            
+            return tableNames;
         }
 
         /// <summary>
         /// Creates a new table.
         /// </summary>
         /// <param name="table">The name of the table to be created.</param>
-        public void CreateTable(string table)
+        public async Task<bool> CreateTable(string table)
         {
-            CreateTableImpl(table, true);
+            return await CreateTableImpl(table, true);
         }
 
-        /// <summary>
-        /// Tries to create a new table.
-        /// </summary>
-        /// <param name="tableName">The name of the table to be created.</param>
-        /// <param name="table">The table that has been created or already existed.</param>
-        /// <returns>Returns <code>true</code> if the table was created succesfully,
-        /// <code>false</code> if the table already exists.</returns>
-        public bool TryCreateTable(string tableName, out ICyanTable table)
-        {
-            var ret = TryCreateTable(tableName);
-            table = this[tableName];
 
-            return ret;
-        }
 
         /// <summary>
         /// Tries to create a new table.
@@ -141,21 +134,21 @@ namespace Cyan
         /// <param name="table">The name of the table to be created.</param>
         /// <returns>Returns <code>true</code> if the table was created succesfully,
         /// <code>false</code> if the table already exists.</returns>
-        public bool TryCreateTable(string table)
+        public async Task<bool> TryCreateTable(string table)
         {
-            return CreateTableImpl(table, false);
+            return await CreateTableImpl(table, false);
         }
 
         /// <summary>
         /// Deletes an existing table.
         /// </summary>
         /// <param name="table">The name of the table to be deleted.</param>
-        public void DeleteTable(string table)
+        public async void DeleteTable(string table)
         {
             CyanUtilities.ValidateTableName(table);
             var resource = string.Format("Tables('{0}')", table);
 
-            var response = RestClient.DeleteRequest(resource, "");
+            var response = await RestClient.DeleteRequest(resource, "");
             response.ThrowIfFailed();
         }
 
@@ -205,14 +198,14 @@ namespace Cyan
             return new CyanClient(accountName, accountKey, useSsl);
         }
 
-        private bool CreateTableImpl(string table, bool throwOnConflict)
+        private async Task<bool> CreateTableImpl(string table, bool throwOnConflict)
         {
             CyanUtilities.ValidateTableName(table);
 
             var entity = CyanEntity.FromObject(new {TableName = table});
 
             var document = entity.Serialize();
-            var response = RestClient.PostRequest("Tables", document.ToString());
+            var response = await RestClient.PostRequest("Tables", document.ToString());
 
             if (!throwOnConflict && response.StatusCode == HttpStatusCode.Conflict)
                 return false;

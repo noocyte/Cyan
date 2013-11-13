@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Cyan.Interfaces;
 using Cyan.Policies;
 
@@ -50,34 +51,34 @@ namespace Cyan
 
         public CyanRetryPolicy RetryPolicy { get; private set; }
 
-        public CyanRestResponse GetRequest(string resource, string query = null)
+        public async Task<CyanRestResponse> GetRequest(string resource, string query = null)
         {
-            return Request("GET", resource, query);
+            return await Request("GET", resource, query);
         }
 
-        public CyanRestResponse PostRequest(string resource, string content)
+        public async Task<CyanRestResponse> PostRequest(string resource, string content)
         {
-            return Request("POST", resource, content: content);
+            return await Request("POST", resource, content: content);
         }
 
-        public CyanRestResponse PutRequest(string resource, string content, string ifMatch = null)
+        public async Task<CyanRestResponse> PutRequest(string resource, string content, string ifMatch = null)
         {
-            return Request("PUT", resource, content: content, ifMatch: ifMatch);
+            return await Request("PUT", resource, content: content, ifMatch: ifMatch);
         }
 
-        public CyanRestResponse MergeRequest(string resource, string content, string ifMatch = null)
+        public async Task<CyanRestResponse> MergeRequest(string resource, string content, string ifMatch = null)
         {
-            return Request("MERGE", resource, content: content, ifMatch: ifMatch);
+            return await Request("MERGE", resource, content: content, ifMatch: ifMatch);
         }
 
-        public CyanRestResponse DeleteRequest(string resource, string ifMatch = null)
+        public async Task<CyanRestResponse> DeleteRequest(string resource, string ifMatch = null)
         {
-            return Request("DELETE", resource, ifMatch: ifMatch ?? "*");
+            return await Request("DELETE", resource, ifMatch: ifMatch ?? "*");
         }
 
-        public CyanBatchResponse BatchRequest(string multipartBoundary, byte[] contentBytes)
+        public async Task<CyanBatchResponse> BatchRequest(string multipartBoundary, byte[] contentBytes)
         {
-            var response = GetResponse("POST",
+            var response = await GetResponse("POST",
                 "$batch",
                 contentType: string.Format("multipart/mixed; boundary={0}", multipartBoundary),
                 contentBytes: contentBytes);
@@ -109,7 +110,7 @@ namespace Cyan
             }
         }
 
-        private CyanRestResponse Request(string method,
+        private async Task<CyanRestResponse> Request(string method,
             string resource,
             string query = null,
             string contentType = null,
@@ -126,10 +127,10 @@ namespace Cyan
                 retry = false;
                 try
                 {
-                    using (var response = GetResponse(method,
+                    using (var response = await GetResponse(method,
                         resource, query, contentType, content, contentBytes, ifMatch
                         ))
-                        ret = CyanRestResponse.Parse(response);
+                        ret =  CyanRestResponse.Parse(response);
                 }
                 catch (Exception ex)
                 {
@@ -156,7 +157,7 @@ namespace Cyan
             return ret;
         }
 
-        private HttpWebResponse GetResponse(string method,
+        private async Task<HttpWebResponse> GetResponse(string method,
             string resource,
             string query = null,
             string contentType = null,
@@ -199,7 +200,8 @@ namespace Cyan
                         requestStream.Write(contentBytes, 0, contentBytes.Length);
                 }
 
-                return (HttpWebResponse) request.GetResponse();
+                var resp = await request.GetResponseAsync();
+                return (HttpWebResponse) resp;
             }
             catch (WebException webEx)
             {
