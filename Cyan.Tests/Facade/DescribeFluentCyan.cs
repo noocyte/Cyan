@@ -182,6 +182,7 @@ namespace Cyan.Tests.Facade
             var response = _client.IntoTable(TableName).Post(json);
 
             // t
+            _client.FromTable(TableName).RetrieveAll().Result.Count().Should().Be(1);
             response.Status.Should().Be(HttpStatusCode.Created);
             response.Result.Id.Should().NotBeEmpty();
         }
