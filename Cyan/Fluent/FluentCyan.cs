@@ -40,8 +40,7 @@ namespace Cyan.Fluent
             // ReSharper disable once UseMethodAny.0
             if (result.Count() > 0)
             {
-                var fields = result.First().Fields;
-                json.AddRange(fields);
+                json = result.First().ToJsonObject();
                 status = HttpStatusCode.OK;
             }
 

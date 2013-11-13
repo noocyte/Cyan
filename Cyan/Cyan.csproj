@@ -96,8 +96,9 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Xml" />
-    <Reference Include="UXRisk.Lib.Common">
-      <HintPath>..\packages\UXRisk.Lib.Common.0.1.5065.18138\lib\net45\UXRisk.Lib.Common.dll</HintPath>
+    <Reference Include="UXRisk.Lib.Common, Version=0.1.5065.21185, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\UXRisk.Lib.Common.0.1.5065.21185\lib\net45\UXRisk.Lib.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -107,6 +108,7 @@
     <Compile Include="CyanEntity.cs" />
     <Compile Include="CyanException.cs" />
     <Compile Include="Fluent\FluentCyan.cs" />
+    <Compile Include="Fluent\JsonObjectMapper.cs" />
     <Compile Include="Fluent\Response.cs" />
     <Compile Include="Policies\CyanFixedRetryPolicy.cs" />
     <Compile Include="CyanPatterns.cs" />

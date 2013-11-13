@@ -103,9 +103,9 @@
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="UXRisk.Lib.Common, Version=0.1.5065.18138, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="UXRisk.Lib.Common, Version=0.1.5065.21185, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\UXRisk.Lib.Common.0.1.5065.18138\lib\net45\UXRisk.Lib.Common.dll</HintPath>
+      <HintPath>..\packages\UXRisk.Lib.Common.0.1.5065.21185\lib\net45\UXRisk.Lib.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -115,7 +115,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Facade\DescribeFluentCyan.cs" />
+    <Compile Include="Facade\DescribeJsonObjectMapper.cs" />
     <Compile Include="Helpers\FluentCyanHelper.cs" />
+    <Compile Include="Helpers\JsonObjectFactory.cs" />
     <Compile Include="Helpers\TemporaryObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

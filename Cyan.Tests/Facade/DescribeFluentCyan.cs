@@ -22,12 +22,12 @@ namespace Cyan.Tests.Facade
         [TearDown]
         public void Teardown()
         {
-            //var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
-            //var tobeDeleted = table.GetAll();
-            //foreach (var tableObject in tobeDeleted)
-            //{
-            //    table.Delete(tableObject);
-            //}
+            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            var tobeDeleted = table.GetAll();
+            foreach (var tableObject in tobeDeleted)
+            {
+                table.Delete(tableObject);
+            }
         }
 
         [Test]
@@ -143,7 +143,9 @@ namespace Cyan.Tests.Facade
         {
             // g
             var objectId = Guid.NewGuid().ToString();
-            var json = new JsonObject {{"id", objectId}};
+            var aTimestamp = DateTime.Now;
+
+            var json = JsonObjectFactory.CreateJsonObject(aTimestamp, objectId);
             var tableObj = new TemporaryObject("PK", objectId) {id = objectId};
             var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
             table.Add(tableObj);
@@ -152,13 +154,13 @@ namespace Cyan.Tests.Facade
             var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            dynamic actual = client.FromTable("TemporaryObject").Retrieve(objectId);
+            var actual = client.FromTable("TemporaryObject").Retrieve(objectId);
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
             Assert.That(actual.Result.Id, Is.EqualTo(expected.Result.Id));
-           // Assert.That(actual.Result.ETag.Replace(":", "%3A"), Is.EqualTo(expected.Result.ETag));
-           // Assert.That((DateTimeOffset)(actual.Result.Timestamp), Is.EqualTo(expected.Result.Timestamp));
+            Assert.That(actual.Result.ToDictionary().ContainsKey("ETag"));
+            Assert.That(actual.Result.ToDictionary().ContainsKey("Timestamp"));
         }
     }
 }
