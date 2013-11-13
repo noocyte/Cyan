@@ -6,7 +6,7 @@ namespace Cyan.Fluent
     {
         public static JsonObject ToJsonObject(this CyanEntity ce)
         {
-            var json = new JsonObject() {{"ETag", ce.ETag}, {"Timestamp", ce.Timestamp}};
+            var json = new JsonObject {{"ETag", ce.ETag}, {"Timestamp", ce.Timestamp}};
             foreach (var field in ce.Fields)
             {
                 json.Add(field.Key, field.Value);

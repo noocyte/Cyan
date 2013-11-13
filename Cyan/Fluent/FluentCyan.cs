@@ -61,11 +61,11 @@ namespace Cyan.Fluent
                 {
                     var fields = ce.Fields;
                     var json = new JsonObject();
-                    json.AddRange(fields);    
-                    
+                    json.AddRange(fields);
+
                     listOfJson.Add(json);
                 }
-                
+
                 status = HttpStatusCode.OK;
             }
 
