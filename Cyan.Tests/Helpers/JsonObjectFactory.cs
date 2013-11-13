@@ -5,6 +5,20 @@ namespace Cyan.Tests.Helpers
 {
     public static class JsonObjectFactory
     {
+        public static JsonObject CreateJsonObjectForPost(string id = "someId", string parentId ="", string name = "someName")
+        {
+            var json = new JsonObject
+            {
+                {"id", id},
+                {"name", name},
+                {"parentId", parentId},
+                {"PartitionKey", "PK"},
+                {"RowKey", id}
+            };
+
+            return json;
+        }
+
         public static JsonObject CreateJsonObject(DateTime aTimestamp, string id = "something")
         {
             const string valueString = "something";

@@ -14,9 +14,13 @@ namespace Cyan.Tests.Facade
     [TestFixture]
     public class DescribeFluentCyan
     {
+        private FluentCyan _client;
+        private const string TableName = "TemporaryObject";
+
         [SetUp]
         public void Setup()
         {
+            _client = new FluentCyan(FluentCyanHelper.GetCyanClient());
         }
 
         [TearDown]
@@ -50,10 +54,9 @@ namespace Cyan.Tests.Facade
         {
             // g
             const string tableName = "123";
-            var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            Action act = () => client.FromTable(tableName);
+            Action act = () => _client.FromTable(tableName);
 
             // t
             act.ShouldThrow<ArgumentException>();
@@ -79,10 +82,9 @@ namespace Cyan.Tests.Facade
         {
             // g
             var expected = new Response<JsonObject>(HttpStatusCode.NotFound, new JsonObject());
-            var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            var actual = client.FromTable("dummy").Retrieve("123");
+            var actual = _client.FromTable("dummy").Retrieve("123");
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -92,10 +94,9 @@ namespace Cyan.Tests.Facade
         public void ItComplains_WhenQueryingForOneRecord_GivenInvalidID()
         {
             // g
-            var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            Action act = () => client.FromTable("dummy").Retrieve(null);
+            Action act = () => _client.FromTable("dummy").Retrieve(null);
 
             // t
             act.ShouldThrow<ArgumentNullException>();
@@ -106,10 +107,9 @@ namespace Cyan.Tests.Facade
         {
             // g
             var expected = new Response<IEnumerable<JsonObject>>(HttpStatusCode.NotFound, new List<JsonObject>());
-            var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            var actual = client.FromTable("dummy").RetrieveAll();
+            var actual = _client.FromTable("dummy").RetrieveAll();
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -128,10 +128,8 @@ namespace Cyan.Tests.Facade
             var allObjects = new[] { item1, item2 };
             var expected = new Response<TemporaryObject[]>(HttpStatusCode.OK, allObjects);
 
-            var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
-
             // w
-            var actual = client.FromTable("TemporaryObject").RetrieveAll();
+            var actual = _client.FromTable(TableName).RetrieveAll();
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
@@ -146,21 +144,46 @@ namespace Cyan.Tests.Facade
             var aTimestamp = DateTime.Now;
 
             var json = JsonObjectFactory.CreateJsonObject(aTimestamp, objectId);
-            var tableObj = new TemporaryObject("PK", objectId) {id = objectId};
+            var tableObj = new TemporaryObject("PK", objectId) { id = objectId };
             var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
             table.Add(tableObj);
 
             var expected = new Response<JsonObject>(HttpStatusCode.OK, json);
-            var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
-            var actual = client.FromTable("TemporaryObject").Retrieve(objectId);
+            var actual = _client.FromTable(TableName).Retrieve(objectId);
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
             Assert.That(actual.Result.Id, Is.EqualTo(expected.Result.Id));
             Assert.That(actual.Result.ToDictionary().ContainsKey("ETag"));
             Assert.That(actual.Result.ToDictionary().ContainsKey("Timestamp"));
+        }
+
+        [Test]
+        public void ItComplains_WhenPosting_GivenInvalidJsonObject()
+        {
+            // g
+
+            // w
+            Action act = () => _client.IntoTable("dummy").Post(null);
+
+            // t
+            act.ShouldThrow<ArgumentNullException>();
+        }
+
+        [Test]
+        public void ItShouldPostOneRecord_GivenValidJsonObject()
+        {
+            // g 
+            var json = JsonObjectFactory.CreateJsonObjectForPost();
+
+            // w
+            var response = _client.IntoTable(TableName).Post(json);
+
+            // t
+            response.Status.Should().Be(HttpStatusCode.Created);
+            response.Result.Id.Should().NotBeEmpty();
         }
     }
 }

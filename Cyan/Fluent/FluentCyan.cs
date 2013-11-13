@@ -17,6 +17,11 @@ namespace Cyan.Fluent
             _tableClient = tableClient;
         }
 
+        public FluentCyan IntoTable(string tableName)
+        {
+            return FromTable(tableName);
+        }
+
         public FluentCyan FromTable(string tableName)
         {
             if (String.IsNullOrEmpty(tableName))
@@ -25,6 +30,18 @@ namespace Cyan.Fluent
             _tableName = tableName;
             _tableClient.TryCreateTable(_tableName);
             return this;
+        }
+
+        public Response<JsonObject> Post(JsonObject json)
+        {
+            if (json == null)
+                throw new ArgumentNullException("json");
+
+            var table = _tableClient[_tableName];
+            var entity = json.ToCyanEntity();
+            var result = table.Insert(entity);
+
+            return new Response<JsonObject>(HttpStatusCode.Created, result.ToJsonObject());
         }
 
         public Response<JsonObject> Retrieve(string id)

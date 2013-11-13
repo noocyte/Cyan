@@ -1,4 +1,5 @@
-﻿using UXRisk.Lib.Common.Models;
+﻿using System;
+using UXRisk.Lib.Common.Models;
 
 namespace Cyan.Fluent
 {
@@ -13,6 +14,20 @@ namespace Cyan.Fluent
             }
 
             return json;
+        }
+
+        public static CyanEntity ToCyanEntity(this JsonObject oneObject)
+        {
+            if (oneObject == null)
+                throw new ArgumentNullException("oneObject");
+
+            var entity = new CyanEntity();
+            foreach (var fieldValues in oneObject)
+            {
+                entity.Fields.Add(fieldValues.Key, fieldValues.Value);
+            }
+
+            return entity;
         }
     }
 }
