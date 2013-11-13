@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Cyan.Fluent;
@@ -6,6 +7,7 @@ using Cyan.Tests.Helpers;
 using FakeItEasy;
 using FluentAssertions;
 using NUnit.Framework;
+using UXRisk.Lib.Common.Models;
 
 namespace Cyan.Tests.Facade
 {
@@ -20,12 +22,12 @@ namespace Cyan.Tests.Facade
         [TearDown]
         public void Teardown()
         {
-            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
-            var tobeDeleted = table.GetAll();
-            foreach (var tableObject in tobeDeleted)
-            {
-                table.Delete(tableObject);
-            }
+            //var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            //var tobeDeleted = table.GetAll();
+            //foreach (var tableObject in tobeDeleted)
+            //{
+            //    table.Delete(tableObject);
+            //}
         }
 
         [Test]
@@ -76,7 +78,7 @@ namespace Cyan.Tests.Facade
         public void ItShouldReturnNotFound_WhenQueryingForOneRecord_GivenNoRecordsExists()
         {
             // g
-            var expected = new Response<TemporaryObject>(HttpStatusCode.NotFound, null);
+            var expected = new Response<JsonObject>(HttpStatusCode.NotFound, new JsonObject());
             var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
@@ -103,7 +105,7 @@ namespace Cyan.Tests.Facade
         public void ItShouldReturnNotFound_WhenRetrievingAllRecords_GivenNoRecordsExists()
         {
             // g
-            var expected = new Response<TemporaryObject>(HttpStatusCode.NotFound, null);
+            var expected = new Response<IEnumerable<JsonObject>>(HttpStatusCode.NotFound, new List<JsonObject>());
             var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
@@ -117,8 +119,8 @@ namespace Cyan.Tests.Facade
         public void ItShouldReturnOK_WhenQueringForAllRecords_GivenRecordsExists()
         {
             // g
-            var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = "item1" };
-            var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { Id = "item2" };
+            var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { id = "item1" };
+            var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { id = "item2" };
             var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
             table.Add(item1);
             table.Add(item2);
@@ -141,12 +143,12 @@ namespace Cyan.Tests.Facade
         {
             // g
             var objectId = Guid.NewGuid().ToString();
-            var expected = new Response<TemporaryObject>(HttpStatusCode.OK,
-                new TemporaryObject("PK", objectId) { Id = objectId });
+            var json = new JsonObject {{"id", objectId}};
+            var tableObj = new TemporaryObject("PK", objectId) {id = objectId};
             var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
-            table.Add(expected.Result);
+            table.Add(tableObj);
 
-
+            var expected = new Response<JsonObject>(HttpStatusCode.OK, json);
             var client = new FluentCyan(FluentCyanHelper.GetCyanClient());
 
             // w
@@ -155,10 +157,8 @@ namespace Cyan.Tests.Facade
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
             Assert.That(actual.Result.Id, Is.EqualTo(expected.Result.Id));
-            Assert.That(actual.Result.PartitionKey, Is.EqualTo(expected.Result.PartitionKey));
-            Assert.That(actual.Result.RowKey, Is.EqualTo(expected.Result.RowKey));
-            Assert.That(actual.Result.ETag.Replace(":", "%3A"), Is.EqualTo(expected.Result.ETag));
-            Assert.That((DateTimeOffset)(actual.Result.Timestamp), Is.EqualTo(expected.Result.Timestamp));
+           // Assert.That(actual.Result.ETag.Replace(":", "%3A"), Is.EqualTo(expected.Result.ETag));
+           // Assert.That((DateTimeOffset)(actual.Result.Timestamp), Is.EqualTo(expected.Result.Timestamp));
         }
     }
 }

@@ -11,7 +11,8 @@ namespace Cyan.Tests.Helpers
             RowKey = rk;
         }
 
-        public string Id { get; set; }
+// ReSharper disable once InconsistentNaming
+        public string id { get; set; }
         public string SomeValue { get; set; }
     }
 }
