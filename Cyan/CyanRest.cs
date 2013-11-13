@@ -200,7 +200,8 @@ namespace Cyan
                         requestStream.Write(contentBytes, 0, contentBytes.Length);
                 }
 
-                var resp = await request.GetResponseAsync();
+                var resp = request.GetResponse();
+                //var resp = await request.GetResponseAsync();
                 return (HttpWebResponse) resp;
             }
             catch (WebException webEx)

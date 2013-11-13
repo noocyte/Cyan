@@ -29,7 +29,7 @@ namespace Cyan.Fluent
                 throw new ArgumentNullException("tableName");
 
             _tableName = tableName;
-            var created = _tableClient.CreateTable(_tableName).Result;
+            var created = _tableClient.TryCreateTable(_tableName).Result;
             return this;
         }
 
@@ -66,7 +66,7 @@ namespace Cyan.Fluent
             return new Response<JsonObject>(status, json);
         }
 
-        public async  Task<Response<IEnumerable<JsonObject>>> RetrieveAllAsync()
+        public async Task<Response<IEnumerable<JsonObject>>> RetrieveAllAsync()
         {
             var table = _tableClient[_tableName];
             var items = await table.Query("PK");

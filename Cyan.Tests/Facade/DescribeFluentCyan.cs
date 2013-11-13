@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Cyan.Fluent;
 using Cyan.Tests.Helpers;
 using FakeItEasy;
@@ -78,13 +79,14 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
-        public void ItShouldReturnNotFound_WhenQueryingForOneRecord_GivenNoRecordsExists()
+        public async void ItShouldReturnNotFound_WhenQueryingForOneRecord_GivenNoRecordsExists()
         {
             // g
             var expected = new Response<JsonObject>(HttpStatusCode.NotFound, new JsonObject());
 
             // w
-            var actual = _client.FromTable("dummy").RetrieveAsync("123");
+            var actual = await _client.FromTable(TableName).RetrieveAsync("123");
+            //var actual = await _client.FromTable("dummy").RetrieveAsync("123");
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -96,20 +98,20 @@ namespace Cyan.Tests.Facade
             // g
 
             // w
-            Action act = () => _client.FromTable("dummy").RetrieveAsync(null);
+            Func<Task<Response<JsonObject>>> func = async () => await _client.FromTable("dummy").RetrieveAsync(null);
 
             // t
-            act.ShouldThrow<ArgumentNullException>();
+            func.ShouldThrow<ArgumentNullException>();
         }
 
         [Test]
-        public void ItShouldReturnNotFound_WhenRetrievingAllRecords_GivenNoRecordsExists()
+        public async void ItShouldReturnNotFound_WhenRetrievingAllRecords_GivenNoRecordsExists()
         {
             // g
             var expected = new Response<IEnumerable<JsonObject>>(HttpStatusCode.NotFound, new List<JsonObject>());
 
             // w
-            var actual = _client.FromTable("dummy").RetrieveAllAsync();
+            var actual = await _client.FromTable("dummy").RetrieveAllAsync();
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -166,10 +168,10 @@ namespace Cyan.Tests.Facade
             // g
 
             // w
-            Action act = () => _client.IntoTable("dummy").PostAsync(null);
+            Func<Task<Response<JsonObject>>> func = async () => await _client.IntoTable("dummy").PostAsync(null);
 
             // t
-            act.ShouldThrow<ArgumentNullException>();
+            func.ShouldThrow<ArgumentNullException>();
         }
 
         [Test]
