@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 using Cyan.Fluent;
 using Cyan.Tests.Helpers;
@@ -54,13 +55,14 @@ namespace Cyan.Tests.Facade
         public void ItComplainsWhenPassingInInvalidTableName()
         {
             // g
-            const string tableName = "123";
+            const string invalidTableName = "123";
 
             // w
-            Action act = () => _client.FromTable(tableName);
+            Func<Task<Response<IEnumerable<JsonObject>>>> func = 
+                async () => await _client.FromTable(invalidTableName).RetrieveAllAsync().ConfigureAwait(false);
 
             // t
-            act.ShouldThrow<ArgumentException>();
+            func.ShouldThrow<ArgumentException>();
         }
 
         [Test]
@@ -97,7 +99,8 @@ namespace Cyan.Tests.Facade
             // g
 
             // w
-            Func<Task<Response<JsonObject>>> func = async () => await _client.FromTable("dummy").RetrieveAsync(null).ConfigureAwait(false);
+            Func<Task<Response<JsonObject>>> func =
+                async () => await _client.FromTable("dummy").RetrieveAsync(null).ConfigureAwait(false);
 
             // t
             func.ShouldThrow<ArgumentNullException>();

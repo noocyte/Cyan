@@ -29,7 +29,7 @@ namespace Cyan.Fluent
                 throw new ArgumentNullException("tableName");
 
             _tableName = tableName;
-            var res = _tableClient.TryCreateTable(_tableName).Result;
+            _tableClient.TryCreateTable(_tableName).ConfigureAwait(false);
             
             return this;
         }
@@ -92,19 +92,6 @@ namespace Cyan.Fluent
             }
 
             return new Response<IEnumerable<JsonObject>>(status, listOfJson);
-        }
-    }
-
-    public static class AsExtensions
-    {
-        public static async Task<Response<T>> AsAsync<T>(this Func<Task<Response<T>>> func)
-        {
-            return await func().ConfigureAwait(false);
-        }
-
-        public static Response<T> AsSync<T>(this Func<Response<T>> func)
-        {
-            return func();
         }
     }
 }
