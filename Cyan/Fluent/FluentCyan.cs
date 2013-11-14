@@ -18,19 +18,24 @@ namespace Cyan.Fluent
             _tableClient = tableClient;
         }
 
-        public FluentCyan IntoTable(string tableName)
-        {
-            return FromTable(tableName);
-        }
-
-        public FluentCyan FromTable(string tableName)
+        private void DefineTable(string tableName)
         {
             if (String.IsNullOrEmpty(tableName))
                 throw new ArgumentNullException("tableName");
 
             _tableName = tableName;
             _tableClient.TryCreateTable(_tableName).ConfigureAwait(false);
-            
+        }
+
+        public FluentCyan IntoTable(string tableName)
+        {
+            DefineTable(tableName);
+            return this;
+        }
+
+        public FluentCyan FromTable(string tableName)
+        {
+            DefineTable(tableName);
             return this;
         }
 
@@ -39,7 +44,6 @@ namespace Cyan.Fluent
             if (json == null)
                 throw new ArgumentNullException("json");
 
-            var res = _tableClient.TryCreateTable(_tableName).Result;
             var table = _tableClient[_tableName];
             var entity = json.ToCyanEntity();
             var result = await table.Insert(entity).ConfigureAwait(false);
@@ -77,6 +81,7 @@ namespace Cyan.Fluent
             var status = HttpStatusCode.NotFound;
             var listOfJson = new List<JsonObject>();
 
+            // ReSharper disable once UseMethodAny.0
             if (result.Count() > 0)
             {
                 foreach (var ce in result)
