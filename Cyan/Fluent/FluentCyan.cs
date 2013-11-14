@@ -51,7 +51,7 @@ namespace Cyan.Fluent
             return new Response<JsonObject>(HttpStatusCode.Created, result.ToJsonObject());
         }
 
-        public async Task<Response<JsonObject>> RetrieveAsync(string id)
+        public async Task<Response<JsonObject>> GetByIdAsync(string id)
         {
             if (string.IsNullOrEmpty(id))
                 throw new ArgumentNullException("id");
@@ -72,7 +72,7 @@ namespace Cyan.Fluent
             return new Response<JsonObject>(status, json);
         }
 
-        public async Task<Response<IEnumerable<JsonObject>>> RetrieveAllAsync()
+        public async Task<Response<IEnumerable<JsonObject>>> GetAllAsync()
         {
             var table = _tableClient[_tableName];
             var items = await table.Query("PK").ConfigureAwait(false);
