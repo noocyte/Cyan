@@ -85,8 +85,7 @@ namespace Cyan.Tests.Facade
             var expected = new Response<JsonObject>(HttpStatusCode.NotFound, new JsonObject());
 
             // w
-            var actual = await _client.FromTable(TableName).RetrieveAsync("123");
-            //var actual = await _client.FromTable("dummy").RetrieveAsync("123");
+            var actual = await _client.FromTable("dummy").RetrieveAsync("123").ConfigureAwait(false);
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -98,7 +97,7 @@ namespace Cyan.Tests.Facade
             // g
 
             // w
-            Func<Task<Response<JsonObject>>> func = async () => await _client.FromTable("dummy").RetrieveAsync(null);
+            Func<Task<Response<JsonObject>>> func = async () => await _client.FromTable("dummy").RetrieveAsync(null).ConfigureAwait(false);
 
             // t
             func.ShouldThrow<ArgumentNullException>();
@@ -111,7 +110,7 @@ namespace Cyan.Tests.Facade
             var expected = new Response<IEnumerable<JsonObject>>(HttpStatusCode.NotFound, new List<JsonObject>());
 
             // w
-            var actual = await _client.FromTable("dummy").RetrieveAllAsync();
+            var actual = await _client.FromTable("dummy").RetrieveAllAsync().ConfigureAwait(false);
 
             // t
             actual.ShouldBeEquivalentTo(expected);
@@ -131,7 +130,7 @@ namespace Cyan.Tests.Facade
             var expected = new Response<TemporaryObject[]>(HttpStatusCode.OK, allObjects);
 
             // w
-            var actual = await _client.FromTable(TableName).RetrieveAllAsync();
+            var actual = await _client.FromTable(TableName).RetrieveAllAsync().ConfigureAwait(false);
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
@@ -153,7 +152,7 @@ namespace Cyan.Tests.Facade
             var expected = new Response<JsonObject>(HttpStatusCode.OK, json);
 
             // w
-            var actual = await _client.FromTable(TableName).RetrieveAsync(objectId);
+            var actual = await _client.FromTable(TableName).RetrieveAsync(objectId).ConfigureAwait(false);
 
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
@@ -168,7 +167,7 @@ namespace Cyan.Tests.Facade
             // g
 
             // w
-            Func<Task<Response<JsonObject>>> func = async () => await _client.IntoTable("dummy").PostAsync(null);
+            Func<Task<Response<JsonObject>>> func = async () => await _client.IntoTable("dummy").PostAsync(null).ConfigureAwait(false);
 
             // t
             func.ShouldThrow<ArgumentNullException>();
@@ -181,10 +180,10 @@ namespace Cyan.Tests.Facade
             var json = JsonObjectFactory.CreateJsonObjectForPost();
 
             // w
-            var response = await _client.IntoTable(TableName).PostAsync(json);
+            var response = await _client.IntoTable(TableName).PostAsync(json).ConfigureAwait(false);
 
             // t
-            var allResponses = await _client.FromTable(TableName).RetrieveAllAsync();
+            var allResponses = await _client.FromTable(TableName).RetrieveAllAsync().ConfigureAwait(false);
             allResponses.Result.Count().Should().Be(1);
             response.Status.Should().Be(HttpStatusCode.Created);
             response.Result.Id.Should().NotBeEmpty();

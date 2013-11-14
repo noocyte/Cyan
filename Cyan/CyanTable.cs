@@ -56,7 +56,7 @@ namespace Cyan
             {
                 var query = FormatQuery(partition, row, filter, top, fields, nextPartition, nextRow);
 
-                var response = await RestClient.GetRequest(resource, query);
+                var response = await RestClient.GetRequest(resource, query).ConfigureAwait(false);
 
                 if (single)
                 {
@@ -96,12 +96,12 @@ namespace Cyan
         /// <returns>The entity that has been inserted.</returns>
         public async Task<CyanEntity> Insert(CyanEntity entity)
         {
-            return await InsertImpl(entity, true);
+            return await InsertImpl(entity, true).ConfigureAwait(false);
         }
 
         public async Task<CyanEntity> TryInsert(CyanEntity entity)
         {
-            return await InsertImpl(entity, false);
+            return await InsertImpl(entity, false).ConfigureAwait(false);
         }
 
         private async Task<CyanEntity> InsertImpl(CyanEntity entity, bool throwOnConflict)
@@ -110,7 +110,7 @@ namespace Cyan
 
             var document = cyanEntity.Serialize();
 
-            var response = await RestClient.PostRequest(TableName, document.ToString());
+            var response = await RestClient.PostRequest(TableName, document.ToString()).ConfigureAwait(false);
 
             if (response.StatusCode == HttpStatusCode.Conflict
                 && !throwOnConflict)
@@ -250,7 +250,7 @@ namespace Cyan
         {
             var resource = FormatResource(partition, row);
 
-            var response = await RestClient.DeleteRequest(resource, eTag);
+            var response = await RestClient.DeleteRequest(resource, eTag).ConfigureAwait(false);
             response.ThrowIfFailed();
         }
 
@@ -264,7 +264,7 @@ namespace Cyan
             var document = cyanEntity.Serialize();
             var resource = FormatResource(partition, row);
 
-            var response = await RestClient.PutRequest(resource, document.ToString());
+            var response = await RestClient.PutRequest(resource, document.ToString()).ConfigureAwait(false);
             response.ThrowIfFailed();
 
             // update entity etag for future updates
@@ -289,7 +289,7 @@ namespace Cyan
             var document = filteredEntity.Serialize();
             var resource = FormatResource(partition, row);
 
-            var response = await RestClient.MergeRequest(resource, document.ToString());
+            var response = await RestClient.MergeRequest(resource, document.ToString()).ConfigureAwait(false);
             response.ThrowIfFailed();
 
             // update entity etag for future updates

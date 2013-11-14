@@ -83,7 +83,7 @@ namespace Cyan
             var batchBoundary = string.Format("batch_{0}", Guid.NewGuid());
             var requestBody = EncodeBatchRequestBody(batchBoundary);
 
-            var response = await _table.RestClient.BatchRequest(batchBoundary, requestBody);
+            var response = await _table.RestClient.BatchRequest(batchBoundary, requestBody).ConfigureAwait(false);
 
             response.ThrowIfFailed();
 
@@ -107,7 +107,7 @@ namespace Cyan
             var batchBoundary = string.Format("batch_{0}", Guid.NewGuid());
             var requestBody = EncodeBatchRequestBody(batchBoundary);
 
-            var response = await _table.RestClient.BatchRequest(batchBoundary, requestBody);
+            var response = await _table.RestClient.BatchRequest(batchBoundary, requestBody).ConfigureAwait(false);
 
             if (response.StatusCode != HttpStatusCode.Accepted)
                 response.ThrowIfFailed();

@@ -53,27 +53,27 @@ namespace Cyan
 
         public async Task<CyanRestResponse> GetRequest(string resource, string query = null)
         {
-            return await Request("GET", resource, query);
+            return await Request("GET", resource, query).ConfigureAwait(false);
         }
 
         public async Task<CyanRestResponse> PostRequest(string resource, string content)
         {
-            return await Request("POST", resource, content: content);
+            return await Request("POST", resource, content: content).ConfigureAwait(false);
         }
 
         public async Task<CyanRestResponse> PutRequest(string resource, string content, string ifMatch = null)
         {
-            return await Request("PUT", resource, content: content, ifMatch: ifMatch);
+            return await Request("PUT", resource, content: content, ifMatch: ifMatch).ConfigureAwait(false);
         }
 
         public async Task<CyanRestResponse> MergeRequest(string resource, string content, string ifMatch = null)
         {
-            return await Request("MERGE", resource, content: content, ifMatch: ifMatch);
+            return await Request("MERGE", resource, content: content, ifMatch: ifMatch).ConfigureAwait(false);
         }
 
         public async Task<CyanRestResponse> DeleteRequest(string resource, string ifMatch = null)
         {
-            return await Request("DELETE", resource, ifMatch: ifMatch ?? "*");
+            return await Request("DELETE", resource, ifMatch: ifMatch ?? "*").ConfigureAwait(false);
         }
 
         public async Task<CyanBatchResponse> BatchRequest(string multipartBoundary, byte[] contentBytes)
@@ -81,7 +81,7 @@ namespace Cyan
             var response = await GetResponse("POST",
                 "$batch",
                 contentType: string.Format("multipart/mixed; boundary={0}", multipartBoundary),
-                contentBytes: contentBytes);
+                contentBytes: contentBytes).ConfigureAwait(false);
 
             return CyanBatchResponse.Parse(response);
         }
@@ -129,7 +129,7 @@ namespace Cyan
                 {
                     using (var response = await GetResponse(method,
                         resource, query, contentType, content, contentBytes, ifMatch
-                        ))
+                        ).ConfigureAwait(false))
                         ret =  CyanRestResponse.Parse(response);
                 }
                 catch (Exception ex)
@@ -200,8 +200,8 @@ namespace Cyan
                         requestStream.Write(contentBytes, 0, contentBytes.Length);
                 }
 
-                var resp = request.GetResponse();
-                //var resp = await request.GetResponseAsync();
+                //var resp = request.GetResponse();
+                var resp = await request.GetResponseAsync().ConfigureAwait(false);
                 return (HttpWebResponse) resp;
             }
             catch (WebException webEx)

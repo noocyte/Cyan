@@ -103,7 +103,7 @@ namespace Cyan
             {
                 var query = hasContinuation ? string.Format("NextTableName={0}", nextTable) : null;
 
-                var response = await RestClient.GetRequest("Tables", query);
+                var response = await RestClient.GetRequest("Tables", query).ConfigureAwait(false);
                 response.ThrowIfFailed();
 
                 hasContinuation = response.Headers.TryGetValue("x-ms-continuation-NextTableName", out nextTable);
@@ -123,7 +123,7 @@ namespace Cyan
         /// <param name="table">The name of the table to be created.</param>
         public async Task<bool> CreateTable(string table)
         {
-            return await CreateTableImpl(table, true);
+            return await CreateTableImpl(table, true).ConfigureAwait(false);
         }
 
 
@@ -136,7 +136,7 @@ namespace Cyan
         /// <code>false</code> if the table already exists.</returns>
         public async Task<bool> TryCreateTable(string table)
         {
-            return await CreateTableImpl(table, false);
+            return await CreateTableImpl(table, false).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace Cyan
             CyanUtilities.ValidateTableName(table);
             var resource = string.Format("Tables('{0}')", table);
 
-            var response = await RestClient.DeleteRequest(resource, "");
+            var response = await RestClient.DeleteRequest(resource, "").ConfigureAwait(false);
             response.ThrowIfFailed();
         }
 
@@ -205,7 +205,7 @@ namespace Cyan
             var entity = CyanEntity.FromObject(new {TableName = table});
 
             var document = entity.Serialize();
-            var response = await RestClient.PostRequest("Tables", document.ToString());
+            var response = await RestClient.PostRequest("Tables", document.ToString()).ConfigureAwait(false);
 
             if (!throwOnConflict && response.StatusCode == HttpStatusCode.Conflict)
                 return false;

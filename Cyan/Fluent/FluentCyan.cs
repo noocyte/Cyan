@@ -29,7 +29,8 @@ namespace Cyan.Fluent
                 throw new ArgumentNullException("tableName");
 
             _tableName = tableName;
-            var created = _tableClient.TryCreateTable(_tableName).Result;
+            var res = _tableClient.TryCreateTable(_tableName).Result;
+            
             return this;
         }
 
@@ -38,9 +39,10 @@ namespace Cyan.Fluent
             if (json == null)
                 throw new ArgumentNullException("json");
 
+            var res = _tableClient.TryCreateTable(_tableName).Result;
             var table = _tableClient[_tableName];
             var entity = json.ToCyanEntity();
-            var result = await table.Insert(entity);
+            var result = await table.Insert(entity).ConfigureAwait(false);
 
             return new Response<JsonObject>(HttpStatusCode.Created, result.ToJsonObject());
         }
@@ -51,7 +53,7 @@ namespace Cyan.Fluent
                 throw new ArgumentNullException("id");
 
             var table = _tableClient[_tableName];
-            var items = await table.Query("PK", id);
+            var items = await table.Query("PK", id).ConfigureAwait(false);
             var result = items.ToList();
             var json = new JsonObject();
             var status = HttpStatusCode.NotFound;
@@ -69,7 +71,7 @@ namespace Cyan.Fluent
         public async Task<Response<IEnumerable<JsonObject>>> RetrieveAllAsync()
         {
             var table = _tableClient[_tableName];
-            var items = await table.Query("PK");
+            var items = await table.Query("PK").ConfigureAwait(false);
             var result = items.ToList();
 
             var status = HttpStatusCode.NotFound;
@@ -90,6 +92,19 @@ namespace Cyan.Fluent
             }
 
             return new Response<IEnumerable<JsonObject>>(status, listOfJson);
+        }
+    }
+
+    public static class AsExtensions
+    {
+        public static async Task<Response<T>> AsAsync<T>(this Func<Task<Response<T>>> func)
+        {
+            return await func().ConfigureAwait(false);
+        }
+
+        public static Response<T> AsSync<T>(this Func<Response<T>> func)
+        {
+            return func();
         }
     }
 }
