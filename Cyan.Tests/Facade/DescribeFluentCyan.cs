@@ -80,7 +80,7 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
-        public async void ItShouldReturnNotFound_WhenQueryingForOneRecord_GivenNoRecordsExists()
+        public async Task ItShouldReturnNotFound_WhenQueryingForOneRecord_GivenNoRecordsExists()
         {
             // g
             var expected = new Response<JsonObject>(HttpStatusCode.NotFound, new JsonObject());
@@ -106,7 +106,7 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
-        public async void ItShouldReturnNotFound_WhenRetrievingAllRecords_GivenNoRecordsExists()
+        public async Task ItShouldReturnNotFound_WhenRetrievingAllRecords_GivenNoRecordsExists()
         {
             // g
             var expected = new Response<IEnumerable<JsonObject>>(HttpStatusCode.NotFound, new List<JsonObject>());
@@ -119,7 +119,7 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
-        public async void ItShouldReturnOK_WhenQueringForAllRecords_GivenRecordsExists()
+        public async Task ItShouldReturnOK_WhenQueringForAllRecords_GivenRecordsExists()
         {
             // g
             var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { id = "item1" };
@@ -140,7 +140,7 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
-        public async void ItShouldReturnOK_WhenQueringForOneRecord_GivenRecordExists()
+        public async Task ItShouldReturnOK_WhenQueringForOneRecord_GivenRecordExists()
         {
             // g
             var objectId = Guid.NewGuid().ToString();
@@ -176,7 +176,7 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
-        public async void ItShouldPostOneRecord_GivenValidJsonObject()
+        public async Task ItShouldPostOneRecord_GivenValidJsonObject()
         {
             // g 
             var json = JsonObjectFactory.CreateJsonObjectForPost();
