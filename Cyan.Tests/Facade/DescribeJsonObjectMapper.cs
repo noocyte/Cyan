@@ -4,13 +4,24 @@ using Cyan.Fluent;
 using Cyan.Tests.Helpers;
 using FluentAssertions;
 using NUnit.Framework;
+using UXRisk.Lib.Common.Models;
 
 namespace Cyan.Tests.Facade
 {
     [TestFixture]
     public class DescribeJsonObjectMapper
     {
+        [Test]
+        public void ItComplains_WhenMappingFromJsonObject_GivenInvalidJsonObject()
+        {
+            // g 
 
+            // w
+            Action act = (() => JsonObjectMapper.ToCyanEntity(null));
+
+            // t
+            act.ShouldThrow<ArgumentNullException>();
+        }
 
         [Test]
         public void ItCanMapFromJsonObject()
