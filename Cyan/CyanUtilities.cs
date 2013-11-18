@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -56,11 +57,11 @@ namespace Cyan
         public static IDictionary<string, string> ParseConnectionStringKeyValues(string connectionString)
         {
             var elements = connectionString
-                .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                .Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries);
 
             var keyValues = elements
                 .Select(SplitKeyValue)
-                .Select(eTokens => new { Key = eTokens[0], Value = eTokens[1] });
+                .Select(eTokens => new {Key = eTokens[0], Value = eTokens[1]});
 
             return keyValues.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.InvariantCultureIgnoreCase);
         }
@@ -92,6 +93,57 @@ namespace Cyan
                 default:
                     return SupportedProtocols.NotSupported;
             }
+        }
+
+        internal static string FormatQuery(string partition, string row, string filter, int top, string[] fields,
+            string nextPartition, string nextRow)
+        {
+            var hasPartition = !string.IsNullOrEmpty(partition);
+            var hasRow = !string.IsNullOrEmpty(row);
+            if (hasPartition ^ hasRow)
+            {
+                var indexer = hasPartition
+                    ? string.Format("PartitionKey eq '{0}'", partition)
+                    : string.Format("RowKey eq '{0}'", row);
+
+                filter = string.IsNullOrEmpty(filter)
+                    ? indexer
+                    : string.Format("{0} and ({1})", indexer, filter);
+            }
+
+            if (string.IsNullOrEmpty(filter)
+                && top <= 0
+                && (fields == null || fields.Length == 0)
+                && string.IsNullOrEmpty(nextPartition)
+                && string.IsNullOrEmpty(nextRow))
+                return null;
+
+            return FormatQuery(!string.IsNullOrEmpty(filter) ? Tuple.Create("$filter", filter) : null,
+                top > 0 ? Tuple.Create("$top", top.ToString(CultureInfo.InvariantCulture)) : null,
+                (fields != null && fields.Length > 0) ? Tuple.Create("$select", string.Join(",", fields)) : null,
+                !string.IsNullOrEmpty(nextPartition) ? Tuple.Create("NextPartitionKey", nextPartition) : null,
+                !string.IsNullOrEmpty(nextRow) ? Tuple.Create("NextRowKey", nextRow) : null);
+        }
+
+        internal static string FormatQuery(params Tuple<string, string>[] queryParameters)
+        {
+            var ret = string.Join("&", queryParameters
+                .Where(p => p != null)
+                .Select(p => string.Format("{0}={1}", p.Item1, Uri.EscapeDataString(p.Item2)))
+                .ToArray());
+
+            return !string.IsNullOrEmpty(ret) ? ret : null;
+        }
+
+        internal static string FormatResource(string tableName, string partitionKey, string rowKey)
+        {
+            if (partitionKey == null || rowKey == null)
+                return tableName;
+
+            return string.Format("{0}(PartitionKey='{1}',RowKey='{2}')",
+                tableName,
+                Uri.EscapeDataString(partitionKey),
+                Uri.EscapeDataString(rowKey));
         }
     }
 }

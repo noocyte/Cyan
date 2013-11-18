@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Cyan.Fluent;
 using Cyan.Tests.Helpers;
 using FluentAssertions;
@@ -9,6 +10,21 @@ namespace Cyan.Tests.Facade
     [TestFixture]
     public class DescribeJsonObjectMapper
     {
+
+
+        [Test]
+        public void ItCanMapFromJsonObject()
+        {
+            // g 
+            var json = JsonObjectFactory.CreateJsonObjectForPost();
+
+            // w
+            var actual = json.ToCyanEntity();
+
+            // t
+            actual.PartitionKey.Should().Be(json["PartitionKey"].ToString());
+        }
+
         [Test]
         public void ItCanMapFromCyanEntity()
         {

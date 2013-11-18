@@ -57,7 +57,7 @@ namespace Cyan.Tests.Facade
             const string invalidTableName = "123";
 
             // w
-            Func<Task<Response<IEnumerable<JsonObject>>>> func = 
+            Func<Task<Response<IEnumerable<JsonObject>>>> func =
                 async () => await _client.FromTable(invalidTableName).GetAllAsync().ConfigureAwait(false);
 
             // t
@@ -190,5 +190,44 @@ namespace Cyan.Tests.Facade
             response.Status.Should().Be(HttpStatusCode.Created);
             response.Result.Id.Should().NotBeEmpty();
         }
+
+        [Test]
+        public async Task ItShouldMergeWithExitingEntity_GivenUpdatedValue()
+        {
+            // g 
+            var json = JsonObjectFactory.CreateJsonObjectForPost(id: "one");
+            var inserted = await _client.IntoTable(TableName).PostAsync(json).ConfigureAwait(false);
+            var entityId = inserted.Result.Id;
+            var updatedJson = JsonObjectFactory.CreateJsonObjectForPost(id: entityId, name: "newName");
+            
+            // w
+            var response = await _client.IntoTable(TableName).MergeAsync(updatedJson).ConfigureAwait(false);
+
+            // t
+            var merged = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
+            merged.Result["name"].Should().Be("newName");
+            merged.Result["ETag"].Should().NotBe(inserted.Result["ETag"]);
+        }
+
+
+        [Test]
+        public async Task ItShouldMergeWithExitingEntity_GivenNewField()
+        {
+            // g 
+            var json = JsonObjectFactory.CreateJsonObjectForPost(id: "one");
+            var inserted = await _client.IntoTable(TableName).PostAsync(json).ConfigureAwait(false);
+            var entityId = inserted.Result.Id;
+            var updatedJson = JsonObjectFactory.CreateJsonObjectForPost(id: entityId);
+            updatedJson.Add("newField", "someValue");
+
+            // w
+            var response = await _client.IntoTable(TableName).MergeAsync(updatedJson).ConfigureAwait(false);
+
+            // t
+            var merged = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
+            merged.Result["newField"].Should().Be("someValue");
+            merged.Result["ETag"].Should().NotBe(inserted.Result["ETag"]);
+        }
+
     }
 }

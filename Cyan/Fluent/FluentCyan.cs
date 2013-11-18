@@ -98,5 +98,14 @@ namespace Cyan.Fluent
 
             return new Response<IEnumerable<JsonObject>>(status, listOfJson);
         }
+
+        public async Task<Response<JsonObject>>  MergeAsync(JsonObject json)
+        {
+            var table = _tableClient[_tableName];
+            var entity = json.ToCyanEntity();
+            var result = await table.Merge(entity).ConfigureAwait(false);
+
+            return new Response<JsonObject>(HttpStatusCode.OK, result.ToJsonObject());
+        }
     }
 }

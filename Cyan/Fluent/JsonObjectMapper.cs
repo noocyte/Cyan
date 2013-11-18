@@ -21,13 +21,7 @@ namespace Cyan.Fluent
             if (oneObject == null)
                 throw new ArgumentNullException("oneObject");
 
-            var entity = new CyanEntity();
-            foreach (var fieldValues in oneObject)
-            {
-                entity.Fields.Add(fieldValues.Key, fieldValues.Value);
-            }
-
-            return entity;
+            return CyanEntity.FromEnumerable(oneObject);
         }
     }
 }

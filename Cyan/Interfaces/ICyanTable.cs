@@ -14,18 +14,8 @@ namespace Cyan.Interfaces
             bool disableContinuation = false,
             params string[] fields);
         Task<CyanEntity> Insert(CyanEntity entity);
-
-        //Task<bool> TryInsert(CyanEntity entity);
-        //Task<bool> TryInsert(CyanEntity entity, out CyanEntity insertedEntity);
-        //void Update(CyanEntity entity, bool unconditionalUpdate = false);
-        //Task<CyanEntity> TryUpdate(CyanEntity entity);
-        //void Merge(CyanEntity entity, bool unconditionalUpdate = false, params string[] fields);
-        //Task<CyanEntity> TryMerge(CyanEntity entity, params string[] fields);
-        void Delete(CyanEntity entity, bool unconditionalUpdate = false);
-        void Delete(string partition, string row, string eTag = null);
-        Task<CyanEntity> InsertOrUpdate(CyanEntity entity);
-        Task<CyanEntity> InsertOrMerge(CyanEntity entity, params string[] fields);
-        ICyanEGT Batch();
+        Task<CyanEntity> Merge(CyanEntity entity, bool unconditionalUpdate = false);
+        Task Delete(CyanEntity entity);
         string FormatResource(string partitionKey, string rowKey);
     }
 }
