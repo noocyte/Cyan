@@ -4,7 +4,9 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
+using System.Web.UI.WebControls;
 using Cyan.Fluent;
+using Cyan.Interfaces;
 using Cyan.Tests.Helpers;
 using FakeItEasy;
 using FluentAssertions;
@@ -22,13 +24,13 @@ namespace Cyan.Tests.Facade
         [SetUp]
         public void Setup()
         {
-            _client = new FluentCyan(FluentCyanHelper.GetCyanClient());
+            _client = new FluentCyan(FluentCyanTestsHelper.GetCyanClient());
         }
 
         [TearDown]
         public void Teardown()
         {
-            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            var table = FluentCyanTestsHelper.GetAzureTable<TemporaryObject>();
             var tobeDeleted = table.GetAll();
             foreach (var tableObject in tobeDeleted)
             {
@@ -41,7 +43,7 @@ namespace Cyan.Tests.Facade
         {
             // g
             const string tableName = "";
-            var fakeClient = FluentCyanHelper.GetFakeCyanClient();
+            var fakeClient = FluentCyanTestsHelper.GetFakeCyanClient();
             var client = new FluentCyan(fakeClient);
 
             // w
@@ -70,7 +72,7 @@ namespace Cyan.Tests.Facade
         {
             // g
             const string tableName = "dummy";
-            var fakeClient = FluentCyanHelper.GetFakeCyanClient();
+            var fakeClient = FluentCyanTestsHelper.GetFakeCyanClient();
             var client = new FluentCyan(fakeClient);
 
             // w
@@ -125,7 +127,7 @@ namespace Cyan.Tests.Facade
             // g
             var item1 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { id = "item1" };
             var item2 = new TemporaryObject("PK", Guid.NewGuid().ToString()) { id = "item2" };
-            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            var table = FluentCyanTestsHelper.GetAzureTable<TemporaryObject>();
             table.Add(item1);
             table.Add(item2);
 
@@ -149,7 +151,7 @@ namespace Cyan.Tests.Facade
 
             var json = JsonObjectFactory.CreateJsonObject(aTimestamp, objectId);
             var tableObj = new TemporaryObject("PK", objectId) { id = objectId };
-            var table = FluentCyanHelper.GetAzureTable<TemporaryObject>();
+            var table = FluentCyanTestsHelper.GetAzureTable<TemporaryObject>();
             table.Add(tableObj);
 
             var expected = new Response<JsonObject>(HttpStatusCode.OK, json);
@@ -221,7 +223,7 @@ namespace Cyan.Tests.Facade
             var inserted = await _client.IntoTable(TableName).PostAsync(json).ConfigureAwait(false);
             var updatedJson = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
             updatedJson.Result.Add("newField", "someValue");
-            FluentCyanHelper.AddCyanSpecificStuff(updatedJson, entityId);
+            FluentCyanTestsHelper.AddCyanSpecificStuff(updatedJson, entityId);
 
             // w
             var response = await _client.IntoTable(TableName).MergeAsync(updatedJson.Result).ConfigureAwait(false);
@@ -237,17 +239,7 @@ namespace Cyan.Tests.Facade
         public async Task ItComplains_WhenMerging_GivenOldETag()
         {
             // g 
-            const string entityId = "one";
-
-            var firstEntity = JsonObjectFactory.CreateJsonObjectForPost(id: entityId);
-            var firstResponse = await _client.IntoTable(TableName).PostAsync(firstEntity).ConfigureAwait(false);
-
-            var secondEntity = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
-            secondEntity.Result.Add("newField", "newValue");
-            FluentCyanHelper.AddCyanSpecificStuff(secondEntity, entityId);
-
-
-            var secondResponse = await _client.IntoTable(TableName).MergeAsync(secondEntity.Result).ConfigureAwait(false);
+            var firstResponse = await FluentCyanTestsHelper.GivenOldETag(_client, TableName);
 
             // w
             Func<Task<Response<JsonObject>>> func =
@@ -258,7 +250,7 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
-        public async Task ItComplains_WhenMerging_GivenInvalidJsonObject()
+        public void ItComplains_WhenMerging_GivenInvalidJsonObject()
         {
             // g
 
@@ -269,5 +261,65 @@ namespace Cyan.Tests.Facade
             func.ShouldThrow<ArgumentNullException>()
                 .WithMessage("Value cannot be null.\r\nParameter name: json");
         }
+
+        [Test]
+        public void ItComplains_WhenDeleting_GivenInvalidJsonObject()
+        {
+            // g
+
+            // w
+            Func<Task<Response<JsonObject>>> func = async () => await _client.FromTable("dummy").DeleteAsync(null).ConfigureAwait(false);
+
+            // t
+            func.ShouldThrow<ArgumentNullException>()
+                .WithMessage("Value cannot be null.\r\nParameter name: json");
+        }
+
+        [Test]
+        public async Task ItShouldDeleteEntity()
+        {
+            // g
+            var entity = JsonObjectFactory.CreateJsonObjectForPost();
+            var response = await _client.IntoTable(TableName).PostAsync(entity).ConfigureAwait(false);
+            var allEntities = await _client.FromTable(TableName).GetAllAsync().ConfigureAwait(false);
+            allEntities.Result.Count().Should().Be(1);
+
+            // w
+            var deleteResponse = await _client.FromTable(TableName).DeleteAsync(entity).ConfigureAwait(false);
+
+            // t
+            allEntities = await _client.FromTable(TableName).GetAllAsync().ConfigureAwait(false);
+            allEntities.Result.Count().Should().Be(0);
+        }
+
+        [Test]
+        public void ItComplains_WhenDeleting_GivenMissingEntity()
+        {
+            // g
+            var entity = JsonObjectFactory.CreateJsonObjectForPost();
+
+            // w
+            Func<Task<Response<JsonObject>>> func =
+                async () => await _client.FromTable(TableName).DeleteAsync(entity).ConfigureAwait(false);
+
+            // t
+            func.ShouldThrow<CyanException>();
+        }
+
+        [Test]
+        public async Task ItComplains_WhenDeleting_GivenOldETag()
+        {
+            // g 
+            var firstResponse = await FluentCyanTestsHelper.GivenOldETag(_client, TableName);
+
+            // w
+            Func<Task<Response<JsonObject>>> func =
+                async () => await _client.IntoTable(TableName).DeleteAsync(firstResponse.Result).ConfigureAwait(false);
+
+            // t
+            func.ShouldThrow<CyanException>();
+        }
+
+        
     }
 }

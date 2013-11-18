@@ -1,4 +1,5 @@
 ﻿using System.Configuration;
+using System.Threading.Tasks;
 using Cyan.Fluent;
 using Cyan.Interfaces;
 using Cyan.Policies;
@@ -11,7 +12,7 @@ using UXRisk.Lib.Common.Services;
 
 namespace Cyan.Tests.Helpers
 {
-    public static class FluentCyanHelper
+    public static class FluentCyanTestsHelper
     {
         private static ICyanClient _cyanClient;
 
@@ -44,6 +45,21 @@ namespace Cyan.Tests.Helpers
         internal static ICyanClient GetFakeCyanClient()
         {
             return A.Fake<ICyanClient>();
+        }
+
+        internal static async Task<Response<JsonObject>> GivenOldETag(FluentCyan client, string tableName)
+        {
+            const string entityId = "one";
+
+            var firstEntity = JsonObjectFactory.CreateJsonObjectForPost(id: entityId);
+            var firstResponse = await client.IntoTable(tableName).PostAsync(firstEntity).ConfigureAwait(false);
+
+            var secondEntity = await client.FromTable(tableName).GetByIdAsync(entityId).ConfigureAwait(false);
+            secondEntity.Result.Add("newField", "newValue");
+            FluentCyanTestsHelper.AddCyanSpecificStuff(secondEntity, entityId);
+
+            var secondResponse = await client.IntoTable(tableName).MergeAsync(secondEntity.Result).ConfigureAwait(false);
+            return firstResponse;
         }
     }
 }

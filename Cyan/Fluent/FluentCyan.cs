@@ -84,22 +84,14 @@ namespace Cyan.Fluent
             // ReSharper disable once UseMethodAny.0
             if (result.Count() > 0)
             {
-                foreach (var ce in result)
-                {
-                    var fields = ce.Fields;
-                    var json = new JsonObject();
-                    json.AddRange(fields);
-
-                    listOfJson.Add(json);
-                }
-
+                listOfJson.AddRange(result.Select(ce => ce.ToJsonObject()));
                 status = HttpStatusCode.OK;
             }
 
             return new Response<IEnumerable<JsonObject>>(status, listOfJson);
         }
 
-        public async Task<Response<JsonObject>>  MergeAsync(JsonObject json)
+        public async Task<Response<JsonObject>> MergeAsync(JsonObject json)
         {
             if (json == null)
                 throw new ArgumentNullException("json");
@@ -109,6 +101,20 @@ namespace Cyan.Fluent
             var result = await table.Merge(entity).ConfigureAwait(false);
 
             return new Response<JsonObject>(HttpStatusCode.OK, result.ToJsonObject());
+        }
+
+        public async Task<Response<JsonObject>> DeleteAsync(JsonObject json)
+        {
+            if (json == null)
+                throw new ArgumentNullException("json");
+
+            var table = _tableClient[_tableName];
+            var entity = json.ToCyanEntity();
+            var result = new JsonObject();
+
+            await table.Delete(entity).ConfigureAwait(false);
+
+            return new Response<JsonObject>(HttpStatusCode.OK, result);
         }
     }
 }
