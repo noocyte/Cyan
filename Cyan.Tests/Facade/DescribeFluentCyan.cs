@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Mail;
 using System.Threading.Tasks;
 using Cyan.Fluent;
 using Cyan.Tests.Helpers;
@@ -199,7 +200,7 @@ namespace Cyan.Tests.Facade
             var inserted = await _client.IntoTable(TableName).PostAsync(json).ConfigureAwait(false);
             var entityId = inserted.Result.Id;
             var updatedJson = JsonObjectFactory.CreateJsonObjectForPost(id: entityId, name: "newName");
-            
+
             // w
             var response = await _client.IntoTable(TableName).MergeAsync(updatedJson).ConfigureAwait(false);
 
@@ -214,19 +215,46 @@ namespace Cyan.Tests.Facade
         public async Task ItShouldMergeWithExitingEntity_GivenNewField()
         {
             // g 
-            var json = JsonObjectFactory.CreateJsonObjectForPost(id: "one");
+            const string entityId = "one";
+
+            var json = JsonObjectFactory.CreateJsonObjectForPost(id: entityId);
             var inserted = await _client.IntoTable(TableName).PostAsync(json).ConfigureAwait(false);
-            var entityId = inserted.Result.Id;
-            var updatedJson = JsonObjectFactory.CreateJsonObjectForPost(id: entityId);
-            updatedJson.Add("newField", "someValue");
+            var updatedJson = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
+            updatedJson.Result.Add("newField", "someValue");
+            updatedJson.Result.Add("RowKey", entityId);
+            updatedJson.Result.Add("PartitionKey", "PK");
 
             // w
-            var response = await _client.IntoTable(TableName).MergeAsync(updatedJson).ConfigureAwait(false);
+            var response = await _client.IntoTable(TableName).MergeAsync(updatedJson.Result).ConfigureAwait(false);
 
             // t
             var merged = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
             merged.Result["newField"].Should().Be("someValue");
             merged.Result["ETag"].Should().NotBe(inserted.Result["ETag"]);
+        }
+
+        [Test]
+        public async Task ItComplains_WhenMerging_GivenOldETag()
+        {
+            // g 
+            const string entityId = "one";
+
+            var firstEntity = JsonObjectFactory.CreateJsonObjectForPost(id: entityId);
+            var firstResponse = await _client.IntoTable(TableName).PostAsync(firstEntity).ConfigureAwait(false);
+
+            var secondEntity = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
+            secondEntity.Result.Add("newField", "newValue");
+            secondEntity.Result.Add("RowKey", entityId);
+            secondEntity.Result.Add("PartitionKey", "PK");
+
+            var secondResponse = await _client.IntoTable(TableName).MergeAsync(secondEntity.Result).ConfigureAwait(false);
+            
+            // w
+            Func<Task<Response<JsonObject>>> func =
+                async () => await _client.IntoTable(TableName).MergeAsync(firstResponse.Result).ConfigureAwait(false);
+
+            // t
+            func.ShouldThrow<CyanException>();
         }
 
     }
