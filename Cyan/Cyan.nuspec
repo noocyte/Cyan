@@ -2,13 +2,17 @@
 <package >
   <metadata>
     <id>Proactima.Cyan</id>
-    <version>1.0.2</version>
-    <authors>Jarle Nygård, Massimo Andreasi Bassi</authors>
+    <version>1.1.0</version>
+    <authors>Massimo Andreasi Bassi, Jarle Nygård, Alessandro Di Gioia</authors>
     <owners>Proactima Solutions AS</owners>
     <licenseUrl>https://raw.github.com/proactima/Cyan/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/proactima/Cyan</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Framework to work with Azure Storage and dynamic objects.</description>
-    <releaseNotes>Fork from Codeplex, with added interfaces.</releaseNotes>
+    <releaseNotes>Added async fluent interface to access (IFluentCyan).</releaseNotes>
   </metadata>
+  <files>
+    <file src="..\..\bin\Cyan.dll" target="lib\net451" />
+    <file src="..\..\bin\Cyan.pdb" target="lib\net451" />
+  </files>
 </package>
