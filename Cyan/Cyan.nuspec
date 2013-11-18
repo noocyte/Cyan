@@ -12,7 +12,7 @@
     <releaseNotes>Added async fluent interface to access (IFluentCyan).</releaseNotes>
   </metadata>
   <files>
-    <file src="..\..\bin\Cyan.dll" target="lib\net451" />
-    <file src="..\..\bin\Cyan.pdb" target="lib\net451" />
+    <file src="bin\Release\Cyan.dll" target="lib\net451" />
+    <file src="bin\Release\Cyan.pdb" target="lib\net451" />
   </files>
 </package>
