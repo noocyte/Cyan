@@ -101,6 +101,9 @@ namespace Cyan.Fluent
 
         public async Task<Response<JsonObject>>  MergeAsync(JsonObject json)
         {
+            if (json == null)
+                throw new ArgumentNullException("json");
+
             var table = _tableClient[_tableName];
             var entity = json.ToCyanEntity();
             var result = await table.Merge(entity).ConfigureAwait(false);

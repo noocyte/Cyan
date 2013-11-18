@@ -231,7 +231,7 @@ namespace Cyan.Tests.Facade
             merged.Result["newField"].Should().Be("someValue");
             merged.Result["ETag"].Should().NotBe(inserted.Result["ETag"]);
         }
-        
+
 
         [Test]
         public async Task ItComplains_WhenMerging_GivenOldETag()
@@ -248,7 +248,7 @@ namespace Cyan.Tests.Facade
 
 
             var secondResponse = await _client.IntoTable(TableName).MergeAsync(secondEntity.Result).ConfigureAwait(false);
-            
+
             // w
             Func<Task<Response<JsonObject>>> func =
                 async () => await _client.IntoTable(TableName).MergeAsync(firstResponse.Result).ConfigureAwait(false);
@@ -257,5 +257,17 @@ namespace Cyan.Tests.Facade
             func.ShouldThrow<CyanException>();
         }
 
+        [Test]
+        public async Task ItComplains_WhenMerging_GivenInvalidJsonObject()
+        {
+            // g
+
+            // w
+            Func<Task<Response<JsonObject>>> func = async () => await _client.IntoTable("dummy").MergeAsync(null).ConfigureAwait(false);
+
+            // t
+            func.ShouldThrow<ArgumentNullException>()
+                .WithMessage("Value cannot be null.\r\nParameter name: json");
+        }
     }
 }
