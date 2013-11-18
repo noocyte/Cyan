@@ -221,8 +221,7 @@ namespace Cyan.Tests.Facade
             var inserted = await _client.IntoTable(TableName).PostAsync(json).ConfigureAwait(false);
             var updatedJson = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
             updatedJson.Result.Add("newField", "someValue");
-            updatedJson.Result.Add("RowKey", entityId);
-            updatedJson.Result.Add("PartitionKey", "PK");
+            FluentCyanHelper.AddCyanSpecificStuff(updatedJson, entityId);
 
             // w
             var response = await _client.IntoTable(TableName).MergeAsync(updatedJson.Result).ConfigureAwait(false);
@@ -232,6 +231,7 @@ namespace Cyan.Tests.Facade
             merged.Result["newField"].Should().Be("someValue");
             merged.Result["ETag"].Should().NotBe(inserted.Result["ETag"]);
         }
+        
 
         [Test]
         public async Task ItComplains_WhenMerging_GivenOldETag()
@@ -244,8 +244,8 @@ namespace Cyan.Tests.Facade
 
             var secondEntity = await _client.FromTable(TableName).GetByIdAsync(entityId).ConfigureAwait(false);
             secondEntity.Result.Add("newField", "newValue");
-            secondEntity.Result.Add("RowKey", entityId);
-            secondEntity.Result.Add("PartitionKey", "PK");
+            FluentCyanHelper.AddCyanSpecificStuff(secondEntity, entityId);
+
 
             var secondResponse = await _client.IntoTable(TableName).MergeAsync(secondEntity.Result).ConfigureAwait(false);
             

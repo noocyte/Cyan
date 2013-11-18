@@ -1,10 +1,12 @@
 ﻿using System.Configuration;
+using Cyan.Fluent;
 using Cyan.Interfaces;
 using Cyan.Policies;
 using FakeItEasy;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using UXRisk.Lib.Common.Interfaces.Services;
+using UXRisk.Lib.Common.Models;
 using UXRisk.Lib.Common.Services;
 
 namespace Cyan.Tests.Helpers
@@ -12,6 +14,13 @@ namespace Cyan.Tests.Helpers
     public static class FluentCyanHelper
     {
         private static ICyanClient _cyanClient;
+
+        internal static void AddCyanSpecificStuff(Response<JsonObject> updatedJson, string entityId)
+        {
+            updatedJson.Result.Add("RowKey", entityId);
+            updatedJson.Result.Add("PartitionKey", "PK");
+        }
+
 
         internal static CloudStorageAccount GetAccount()
         {
