@@ -8,7 +8,7 @@ using UXRisk.Lib.Common.Models;
 
 namespace Cyan.Fluent
 {
-    public class FluentCyan
+    public class FluentCyan : IFluentCyan
     {
         private readonly ICyanClient _tableClient;
         private string _tableName;
@@ -18,22 +18,13 @@ namespace Cyan.Fluent
             _tableClient = tableClient;
         }
 
-        private void DefineTable(string tableName)
-        {
-            if (String.IsNullOrEmpty(tableName))
-                throw new ArgumentNullException("tableName");
-
-            _tableName = tableName;
-            _tableClient.TryCreateTable(_tableName).ConfigureAwait(false);
-        }
-
-        public FluentCyan IntoTable(string tableName)
+        public IFluentCyan IntoTable(string tableName)
         {
             DefineTable(tableName);
             return this;
         }
 
-        public FluentCyan FromTable(string tableName)
+        public IFluentCyan FromTable(string tableName)
         {
             DefineTable(tableName);
             return this;
@@ -115,6 +106,15 @@ namespace Cyan.Fluent
             await table.Delete(entity).ConfigureAwait(false);
 
             return new Response<JsonObject>(HttpStatusCode.OK, result);
+        }
+
+        private void DefineTable(string tableName)
+        {
+            if (String.IsNullOrEmpty(tableName))
+                throw new ArgumentNullException("tableName");
+
+            _tableName = tableName;
+            _tableClient.TryCreateTable(_tableName).ConfigureAwait(false);
         }
     }
 }

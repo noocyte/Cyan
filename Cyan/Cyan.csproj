@@ -108,6 +108,7 @@
     <Compile Include="CyanEntity.cs" />
     <Compile Include="CyanException.cs" />
     <Compile Include="Fluent\FluentCyan.cs" />
+    <Compile Include="Fluent\IFluentCyan.cs" />
     <Compile Include="Fluent\JsonObjectMapper.cs" />
     <Compile Include="Fluent\Response.cs" />
     <Compile Include="Policies\CyanFixedRetryPolicy.cs" />
