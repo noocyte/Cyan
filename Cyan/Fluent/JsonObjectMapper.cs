@@ -10,7 +10,7 @@ namespace Cyan.Fluent
             var json = new JsonObject {{"ETag", ce.ETag}, {"Timestamp", ce.Timestamp}};
             foreach (var field in ce.Fields)
             {
-                json.Add(field.Key, field.Value);
+                json[field.Key] = field.Value;
             }
 
             return json;

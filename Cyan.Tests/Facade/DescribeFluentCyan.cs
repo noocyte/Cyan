@@ -162,8 +162,8 @@ namespace Cyan.Tests.Facade
             // t
             Assert.That(actual.Status, Is.EqualTo(expected.Status));
             Assert.That(actual.Result.Id, Is.EqualTo(expected.Result.Id));
-            Assert.That(actual.Result.ToDictionary().ContainsKey("ETag"));
-            Assert.That(actual.Result.ToDictionary().ContainsKey("Timestamp"));
+            Assert.That(actual.Result.ContainsKey("ETag"));
+            Assert.That(actual.Result.ContainsKey("Timestamp"));
         }
 
         [Test]
