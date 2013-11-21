@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Cyan
 {
@@ -139,10 +140,12 @@ namespace Cyan
 
         public static CyanEntity FromEnumerable(IEnumerable<KeyValuePair<string, object>> enumerable)
         {
-            CyanEntity ret = new CyanEntity();
+            var ret = new CyanEntity();
 
             foreach (var field in enumerable)
             {
+                var isArray = field.Value is object[];
+
                 switch (field.Key)
                 {
                     case "PartitionKey":
@@ -163,8 +166,13 @@ namespace Cyan
                             throw new ArgumentException("ETag must be of type \"System.String\".");
                         break;
                     default:
-                        CyanUtilities.ValidateFieldType(field.Value.GetType());
-                        ret.Fields.Add(field.Key, field.Value);
+                        if (isArray)
+                            ret.Fields.Add(field.Key, JsonConvert.SerializeObject(field.Value));
+                        else
+                        {
+                            CyanUtilities.ValidateFieldType(field.Value.GetType());
+                            ret.Fields.Add(field.Key, field.Value);
+                        }
                         break;
                 }
             }

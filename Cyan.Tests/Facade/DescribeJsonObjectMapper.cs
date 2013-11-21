@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Cyan.Fluent;
 using Cyan.Tests.Helpers;
 using FluentAssertions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using UXRisk.Lib.Common.Models;
 
@@ -53,6 +55,38 @@ namespace Cyan.Tests.Facade
 
             // t
             json.ShouldBeEquivalentTo(expected);
+        }
+
+
+        [Test]
+        public void ItShouldFlattenArrays()
+        {
+            // g 
+            var expected = JsonConvert.SerializeObject(new object[] {"1", "2", "3"});
+            var json = JsonObjectFactory.CreateJsonObjectForPostWithArray();
+
+            // w
+            var actual = json.ToCyanEntity();
+
+            // t
+            actual.Fields["dragon_ids"].Should().Be(expected);
+        }
+
+        [Test]
+        public void ItShouldInflateArrays()
+        {
+            // g
+            var expected = new object[] {"1", "2", "3"};
+            var expectedString = JsonConvert.SerializeObject(expected);
+
+            var ce = new CyanEntity();
+            ce.Fields.Add("dragon_ids", expectedString);
+            
+            // w
+            var json = ce.ToJsonObject();
+
+            // t
+            json["dragon_ids"].ShouldBeEquivalentTo(expected);
         }
     }
 }

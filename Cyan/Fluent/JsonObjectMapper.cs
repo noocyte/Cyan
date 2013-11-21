@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json;
 using UXRisk.Lib.Common.Models;
 
 namespace Cyan.Fluent
@@ -10,7 +11,12 @@ namespace Cyan.Fluent
             var json = new JsonObject {{"ETag", ce.ETag}, {"Timestamp", ce.Timestamp}};
             foreach (var field in ce.Fields)
             {
-                json[field.Key] = field.Value;
+                json[field.Key] =
+                    field.Key.Contains("_ids") &&
+                    field.Value.ToString().StartsWith("[") &&
+                    field.Value.ToString().EndsWith("]")
+                        ? JsonConvert.DeserializeObject<object[]>(field.Value.ToString())
+                        : field.Value;
             }
 
             return json;
