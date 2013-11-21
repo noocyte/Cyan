@@ -28,6 +28,7 @@ namespace Cyan.Tests.Helpers
                 {"name", name},
                 {"parentId", parentId},
                 {"PartitionKey", "PK"},
+                {"dragon_ids", new object[] {"1", "2", "3"}},
                 {"RowKey", id}
             };
 

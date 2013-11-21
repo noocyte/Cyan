@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using UXRisk.Lib.Common.Models;
 
@@ -12,14 +13,19 @@ namespace Cyan.Fluent
             foreach (var field in ce.Fields)
             {
                 json[field.Key] =
-                    field.Key.Contains("_ids") &&
-                    field.Value.ToString().StartsWith("[") &&
-                    field.Value.ToString().EndsWith("]")
+                    IsArray(field)
                         ? JsonConvert.DeserializeObject<object[]>(field.Value.ToString())
                         : field.Value;
             }
 
             return json;
+        }
+
+        private static bool IsArray(KeyValuePair<string, object> field)
+        {
+            return field.Key.Contains("_ids") &&
+                   field.Value.ToString().StartsWith("[") &&
+                   field.Value.ToString().EndsWith("]");
         }
 
         public static CyanEntity ToCyanEntity(this JsonObject oneObject)
