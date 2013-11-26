@@ -20,13 +20,19 @@ namespace Cyan.Fluent
 
         public IFluentCyan IntoTable(string tableName)
         {
-            DefineTable(tableName);
+            if (String.IsNullOrEmpty(tableName))
+                throw new ArgumentNullException("tableName");
+
+            _tableName = tableName;
             return this;
         }
 
         public IFluentCyan FromTable(string tableName)
         {
-            DefineTable(tableName);
+            if (String.IsNullOrEmpty(tableName))
+                throw new ArgumentNullException("tableName");
+
+            _tableName = tableName;
             return this;
         }
 
@@ -35,7 +41,7 @@ namespace Cyan.Fluent
             if (json == null)
                 throw new ArgumentNullException("json");
 
-            var table = _tableClient[_tableName];
+            var table = await DefineTable();
             var entity = json.ToCyanEntity();
             var result = await table.Insert(entity).ConfigureAwait(false);
 
@@ -47,7 +53,7 @@ namespace Cyan.Fluent
             if (string.IsNullOrEmpty(id))
                 throw new ArgumentNullException("id");
 
-            var table = _tableClient[_tableName];
+            var table = await DefineTable();
             var items = await table.Query("PK", id).ConfigureAwait(false);
             var result = items.ToList();
             var json = new JsonObject();
@@ -65,7 +71,7 @@ namespace Cyan.Fluent
 
         public async Task<Response<IEnumerable<JsonObject>>> GetAllAsync()
         {
-            var table = _tableClient[_tableName];
+            var table = await DefineTable();
             var items = await table.Query("PK").ConfigureAwait(false);
             var result = items.ToList();
 
@@ -87,7 +93,7 @@ namespace Cyan.Fluent
             if (json == null)
                 throw new ArgumentNullException("json");
 
-            var table = _tableClient[_tableName];
+            var table = await DefineTable();
             var entity = json.ToCyanEntity();
             var result = await table.Merge(entity).ConfigureAwait(false);
 
@@ -99,7 +105,7 @@ namespace Cyan.Fluent
             if (json == null)
                 throw new ArgumentNullException("json");
 
-            var table = _tableClient[_tableName];
+            var table = await DefineTable();
             var entity = json.ToCyanEntity();
             var result = new JsonObject();
 
@@ -108,13 +114,11 @@ namespace Cyan.Fluent
             return new Response<JsonObject>(HttpStatusCode.OK, result);
         }
 
-        private void DefineTable(string tableName)
+        private async Task<ICyanTable> DefineTable()
         {
-            if (String.IsNullOrEmpty(tableName))
-                throw new ArgumentNullException("tableName");
-
-            _tableName = tableName;
-            _tableClient.TryCreateTable(_tableName).ConfigureAwait(false);
+            await _tableClient.TryCreateTable(_tableName).ConfigureAwait(false);
+            var table = _tableClient[_tableName];
+            return table;
         }
     }
 }

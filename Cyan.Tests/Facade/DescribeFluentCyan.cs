@@ -53,6 +53,7 @@ namespace Cyan.Tests.Facade
             act.ShouldThrow<ArgumentNullException>();
         }
 
+    
         [Test]
         public void ItComplainsWhenPassingInInvalidTableName()
         {
@@ -65,21 +66,6 @@ namespace Cyan.Tests.Facade
 
             // t
             func.ShouldThrow<ArgumentException>();
-        }
-
-        [Test]
-        public void ItShouldDefineTheTableName()
-        {
-            // g
-            const string tableName = "dummy";
-            var fakeClient = FluentCyanTestsHelper.GetFakeCyanClient();
-            var client = new FluentCyan(fakeClient);
-
-            // w
-            client.FromTable(tableName);
-
-            // t
-            A.CallTo(() => fakeClient.TryCreateTable(tableName)).MustHaveHappened();
         }
 
         [Test]
@@ -319,6 +305,8 @@ namespace Cyan.Tests.Facade
             // t
             func.ShouldThrow<CyanException>();
         }
+
+
 
         
     }

@@ -14,7 +14,7 @@ namespace Cyan.Tests.Helpers
 {
     public static class FluentCyanTestsHelper
     {
-        private static ICyanClient _cyanClient;
+        internal static ICyanClient CyanClient;
 
         internal static void AddCyanSpecificStuff(Response<JsonObject> updatedJson, string entityId)
         {
@@ -35,11 +35,11 @@ namespace Cyan.Tests.Helpers
 
         internal static ICyanClient GetCyanClient()
         {
-            if (_cyanClient == null)
-                _cyanClient = new CyanClient(GetAccount().Credentials.AccountName, GetAccount().Credentials.ExportBase64EncodedKey(),
+            if (CyanClient == null)
+                CyanClient = new CyanClient(GetAccount().Credentials.AccountName, GetAccount().Credentials.ExportBase64EncodedKey(),
                     true, CyanRetryPolicy.Default);
 
-            return _cyanClient;
+            return CyanClient;
         }
 
         internal static ICyanClient GetFakeCyanClient()
