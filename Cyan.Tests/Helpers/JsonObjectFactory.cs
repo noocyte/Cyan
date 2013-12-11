@@ -11,6 +11,7 @@ namespace Cyan.Tests.Helpers
             {
                 {"id", id},
                 {"name", name},
+                {"deleted", false},
                 {"parentId", parentId},
                 {"PartitionKey", "PK"},
                 {"RowKey", id},
@@ -26,6 +27,7 @@ namespace Cyan.Tests.Helpers
             {
                 {"id", id},
                 {"name", name},
+                {"deleted", false},
                 {"parentId", parentId},
                 {"PartitionKey", "PK"},
                 {"dragon_ids", new object[] {"1", "2", "3"}},
@@ -38,7 +40,7 @@ namespace Cyan.Tests.Helpers
         public static JsonObject CreateJsonObject(DateTime aTimestamp, string id = "something")
         {
             const string valueString = "something";
-            return new JsonObject { { "ETag", valueString }, { "Timestamp", aTimestamp }, { "id", id }, { "name", valueString } };
+            return new JsonObject { { "ETag", valueString }, { "Timestamp", aTimestamp }, { "id", id }, { "name", valueString }, { "deleted", false } };
         }
     }
 }

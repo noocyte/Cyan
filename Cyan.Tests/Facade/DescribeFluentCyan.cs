@@ -153,6 +153,23 @@ namespace Cyan.Tests.Facade
         }
 
         [Test]
+        public async Task ItShouldReturnNotFound_WhenQueringForOneRecord_GivenRecordExistAndIsMarkedAsDeleted()
+        {
+            // g
+            var objectId = Guid.NewGuid().ToString();
+
+            var tableObj = new TemporaryObject("PK", objectId) { id = objectId, deleted = true};
+            var table = FluentCyanTestsHelper.GetAzureTable<TemporaryObject>();
+            table.Add(tableObj);
+            
+            // w
+            var actual = await _client.FromTable(TableName).GetByIdAsync(objectId).ConfigureAwait(false);
+
+            // t
+            Assert.That(actual.Status, Is.EqualTo(HttpStatusCode.NotFound));
+        }
+
+        [Test]
         public void ItComplains_WhenPosting_GivenInvalidJsonObject()
         {
             // g

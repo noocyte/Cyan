@@ -47,9 +47,6 @@
     </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net">
-      <HintPath>..\packages\log4net.2.0.2\lib\net40-full\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.ApplicationServer.Caching.AzureClientHelper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.WindowsAzure.Caching.2.1.0.0\lib\net40-full\Microsoft.ApplicationServer.Caching.AzureClientHelper.dll</HintPath>
     </Reference>
@@ -99,9 +96,9 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Xml" />
-    <Reference Include="UXRisk.Lib.Common, Version=0.1.5073.22334, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="UXRisk.Lib.Common, Version=0.1.5092.24403, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\UXRisk.Lib.Common.0.1.5073.22334\lib\net45\UXRisk.Lib.Common.dll</HintPath>
+      <HintPath>..\packages\UXRisk.Lib.Common.0.1.5092.24403\lib\net45\UXRisk.Lib.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

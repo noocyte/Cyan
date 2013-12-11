@@ -54,7 +54,7 @@ namespace Cyan.Fluent
                 throw new ArgumentNullException("id");
 
             var table = await DefineTable();
-            var items = await table.Query("PK", id).ConfigureAwait(false);
+            var items = await table.Query("PK", id, filter: "deleted ne true").ConfigureAwait(false);
             var result = items.ToList();
             var json = new JsonObject();
             var status = HttpStatusCode.NotFound;
