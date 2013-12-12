@@ -14,6 +14,6 @@ namespace Cyan.Tests.Helpers
 // ReSharper disable once InconsistentNaming
         public string id { get; set; }
         public string SomeValue { get; set; }
-        public bool deleted { get; set; }
+        public bool sys_deleted { get; set; }
     }
 }

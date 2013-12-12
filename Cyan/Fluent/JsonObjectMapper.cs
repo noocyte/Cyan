@@ -17,7 +17,7 @@ namespace Cyan.Fluent
                         ? JsonConvert.DeserializeObject<object[]>(field.Value.ToString())
                         : field.Value;
             }
-
+            json.EnsureValidSystemProperties();
             return json;
         }
 

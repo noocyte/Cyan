@@ -96,9 +96,9 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Xml" />
-    <Reference Include="UXRisk.Lib.Common, Version=0.1.5092.24403, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="UXRisk.Lib.Common, Version=0.1.5093.25051, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\UXRisk.Lib.Common.0.1.5092.24403\lib\net45\UXRisk.Lib.Common.dll</HintPath>
+      <HintPath>..\packages\UXRisk.Lib.Common.0.1.5093.25051\lib\net45\UXRisk.Lib.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

@@ -41,7 +41,7 @@ namespace Cyan.Fluent
             if (json == null)
                 throw new ArgumentNullException("json");
 
-            var table = await DefineTable();
+            var table = await DefineTable().ConfigureAwait(false);
             var entity = json.ToCyanEntity();
             var result = await table.Insert(entity).ConfigureAwait(false);
 
@@ -53,8 +53,8 @@ namespace Cyan.Fluent
             if (string.IsNullOrEmpty(id))
                 throw new ArgumentNullException("id");
 
-            var table = await DefineTable();
-            var items = await table.Query("PK", id, filter: "deleted ne true").ConfigureAwait(false);
+            var table = await DefineTable().ConfigureAwait(false);
+            var items = await table.Query("PK", id, filter: "sys_deleted ne true").ConfigureAwait(false);
             var result = items.ToList();
             var json = new JsonObject();
             var status = HttpStatusCode.NotFound;
@@ -71,7 +71,7 @@ namespace Cyan.Fluent
 
         public async Task<Response<IEnumerable<JsonObject>>> GetAllAsync()
         {
-            var table = await DefineTable();
+            var table = await DefineTable().ConfigureAwait(false);
             var items = await table.Query("PK").ConfigureAwait(false);
             var result = items.ToList();
 
@@ -93,7 +93,7 @@ namespace Cyan.Fluent
             if (json == null)
                 throw new ArgumentNullException("json");
 
-            var table = await DefineTable();
+            var table = await DefineTable().ConfigureAwait(false);
             var entity = json.ToCyanEntity();
             var result = await table.Merge(entity).ConfigureAwait(false);
 
@@ -105,7 +105,7 @@ namespace Cyan.Fluent
             if (json == null)
                 throw new ArgumentNullException("json");
 
-            var table = await DefineTable();
+            var table = await DefineTable().ConfigureAwait(false);
             var entity = json.ToCyanEntity();
             var result = new JsonObject();
 

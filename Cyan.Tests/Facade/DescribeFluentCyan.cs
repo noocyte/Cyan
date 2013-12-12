@@ -158,7 +158,7 @@ namespace Cyan.Tests.Facade
             // g
             var objectId = Guid.NewGuid().ToString();
 
-            var tableObj = new TemporaryObject("PK", objectId) { id = objectId, deleted = true};
+            var tableObj = new TemporaryObject("PK", objectId) { id = objectId, sys_deleted = true};
             var table = FluentCyanTestsHelper.GetAzureTable<TemporaryObject>();
             table.Add(tableObj);
             
@@ -242,7 +242,7 @@ namespace Cyan.Tests.Facade
         public async Task ItComplains_WhenMerging_GivenOldETag()
         {
             // g 
-            var firstResponse = await FluentCyanTestsHelper.GivenOldETag(_client, TableName);
+            var firstResponse = await FluentCyanTestsHelper.GivenOldETag(_client, TableName).ConfigureAwait(false);
 
             // w
             Func<Task<Response<JsonObject>>> func =

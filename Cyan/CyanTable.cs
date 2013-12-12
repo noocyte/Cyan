@@ -99,7 +99,7 @@ namespace Cyan
             var resource = FormatResource(partition, row);
 
             var response =
-                await RestClient.MergeRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag);
+                await RestClient.MergeRequest(resource, document.ToString(), unconditionalUpdate ? "*" : eTag).ConfigureAwait(false);
 
             string newETag;
             if (response.Headers.TryGetValue("ETag", out newETag))

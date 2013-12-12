@@ -11,13 +11,12 @@ namespace Cyan.Tests.Helpers
             {
                 {"id", id},
                 {"name", name},
-                {"deleted", false},
                 {"parentId", parentId},
                 {"PartitionKey", "PK"},
                 {"RowKey", id},
                 {"dragon_ids", new object[] {"1", "2", "3"}}
             };
-
+            json.EnsureValidSystemProperties();
             return json;
         }
 
@@ -27,20 +26,21 @@ namespace Cyan.Tests.Helpers
             {
                 {"id", id},
                 {"name", name},
-                {"deleted", false},
                 {"parentId", parentId},
                 {"PartitionKey", "PK"},
                 {"dragon_ids", new object[] {"1", "2", "3"}},
                 {"RowKey", id}
             };
-
+            json.EnsureValidSystemProperties();
             return json;
         }
 
         public static JsonObject CreateJsonObject(DateTime aTimestamp, string id = "something")
         {
             const string valueString = "something";
-            return new JsonObject { { "ETag", valueString }, { "Timestamp", aTimestamp }, { "id", id }, { "name", valueString }, { "deleted", false } };
+            var json = new JsonObject { { "ETag", valueString }, { "Timestamp", aTimestamp }, { "id", id }, { "name", valueString } };
+            json.EnsureValidSystemProperties();
+            return json;
         }
     }
 }
