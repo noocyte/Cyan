@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -144,7 +145,7 @@ namespace Cyan
 
             foreach (var field in enumerable)
             {
-                var isArray = field.Value is object[];
+                var isArray = !(field.Value is string) && (field.Value is IEnumerable);
 
                 switch (field.Key)
                 {

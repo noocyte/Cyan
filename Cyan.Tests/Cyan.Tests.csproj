@@ -114,6 +114,7 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Facade\DescribeCyanEntity.cs" />
     <Compile Include="Facade\DescribeFluentCyan.cs" />
     <Compile Include="Facade\DescribeJsonObjectMapper.cs" />
     <Compile Include="Helpers\FluentCyanTestsHelper.cs" />
