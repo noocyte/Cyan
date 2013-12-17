@@ -114,8 +114,9 @@ namespace Cyan.Fluent
             return new Response<JsonObject>(HttpStatusCode.OK, result);
         }
 
-        private async Task<ICyanTable> DefineTable()
+        internal async Task<ICyanTable> DefineTable()
         {
+            _tableName = _tableName.ToLowerInvariant();
             await _tableClient.TryCreateTable(_tableName).ConfigureAwait(false);
             var table = _tableClient[_tableName];
             return table;

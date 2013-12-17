@@ -168,11 +168,11 @@ namespace Cyan
                         break;
                     default:
                         if (isArray)
-                            ret.Fields.Add(field.Key, JsonConvert.SerializeObject(field.Value));
+                            ret.Fields.Add(field.Key.ToLowerInvariant(), JsonConvert.SerializeObject(field.Value));
                         else
                         {
                             CyanUtilities.ValidateFieldType(field.Value.GetType());
-                            ret.Fields.Add(field.Key, field.Value);
+                            ret.Fields.Add(field.Key.ToLowerInvariant(), field.Value);
                         }
                         break;
                 }

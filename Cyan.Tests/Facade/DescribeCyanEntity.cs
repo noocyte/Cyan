@@ -8,13 +8,28 @@ namespace Cyan.Tests.Facade
     [TestFixture]
     public class DescribeCyanEntity
     {
-        private static IEnumerable<KeyValuePair<string, object>> CreateInput(object value)
+        private static IEnumerable<KeyValuePair<string, object>> CreateSimpleInput(object value)
         {
             var input = new List<KeyValuePair<string, object>>()
             {
-                new KeyValuePair<string, object>("one", value)
+                new KeyValuePair<string, object>("one", value),
+                new KeyValuePair<string, object>("TWO", value)
             };
             return input;
+        }
+       
+
+        [Test]
+        public void ItShouldLowerCaseAllKeys()
+        {
+            // g
+            var input = CreateSimpleInput("somevalue");
+
+            // w
+            var actual = CyanEntity.FromEnumerable(input);
+
+            // t
+            actual.Fields.ContainsKey("two").Should().BeTrue();
         }
 
         [Test]
@@ -22,7 +37,7 @@ namespace Cyan.Tests.Facade
         {
             // g
             var datetime = DateTime.UtcNow;
-            var input = CreateInput(datetime);
+            var input = CreateSimpleInput(datetime);
 
             // w
             var actual = CyanEntity.FromEnumerable(input);
@@ -35,7 +50,7 @@ namespace Cyan.Tests.Facade
         public void ItShouldNotSerializeIntToString()
         {
             // g
-            var input = CreateInput(1001);
+            var input = CreateSimpleInput(1001);
 
             // w
             var actual = CyanEntity.FromEnumerable(input);
@@ -48,7 +63,7 @@ namespace Cyan.Tests.Facade
         public void ItShouldNotSerializeStringToString()
         {
             // g
-            var input = CreateInput("one, two");
+            var input = CreateSimpleInput("one, two");
 
             // w
             var actual = CyanEntity.FromEnumerable(input);
@@ -61,7 +76,7 @@ namespace Cyan.Tests.Facade
         public void ItShouldSerializeListOfStringToString()
         {
             // g
-            var input = CreateInput(new List<string>() {"one", "two"});
+            var input = CreateSimpleInput(new List<string>() {"one", "two"});
 
             // w
             var actual = CyanEntity.FromEnumerable(input);
@@ -74,7 +89,7 @@ namespace Cyan.Tests.Facade
         public void ItShouldSerializeObjectArrayToString()
         {
             // g
-            var input = CreateInput(new object[] {"one", "two"});
+            var input = CreateSimpleInput(new object[] {"one", "two"});
 
             // w
             var actual = CyanEntity.FromEnumerable(input);
