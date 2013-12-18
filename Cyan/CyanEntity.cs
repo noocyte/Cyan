@@ -147,26 +147,26 @@ namespace Cyan
             {
                 var isArray = !(field.Value is string) && (field.Value is IEnumerable);
 
-                switch (field.Key)
+                switch (field.Key.ToLowerInvariant())
                 {
-                    case "PartitionKey":
+                    case "partitionkey":
                         ret.PartitionKey = field.Value as string;
                         if (ret.PartitionKey == null)
                             throw new ArgumentException("PartitionKey must be of type \"System.String\".");
                         CyanUtilities.ValidateKeyField(ret.PartitionKey);
                         break;
-                    case "RowKey":
+                    case "rowkey":
                         ret.RowKey = field.Value as string;
                         if (ret.RowKey == null)
                             throw new ArgumentException("RowKey must be of type \"System.String\".");
                         CyanUtilities.ValidateKeyField(ret.RowKey);
                         break;
-                    case "ETag":
+                    case "etag":
                         ret.ETag = field.Value as string;
                         if (ret.ETag == null)
                             throw new ArgumentException("ETag must be of type \"System.String\".");
                         break;
-                    case "TableName":
+                    case "tablename":
                         ret.Fields.Add(field.Key, field.Value);
                         break;
                     default:
