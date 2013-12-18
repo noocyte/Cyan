@@ -166,6 +166,9 @@ namespace Cyan
                         if (ret.ETag == null)
                             throw new ArgumentException("ETag must be of type \"System.String\".");
                         break;
+                    case "TableName":
+                        ret.Fields.Add(field.Key, field.Value);
+                        break;
                     default:
                         if (isArray)
                             ret.Fields.Add(field.Key.ToLowerInvariant(), JsonConvert.SerializeObject(field.Value));

@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Proactima.Cyan</id>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
     <authors>Massimo Andreasi Bassi, Jarle Nygård, Alessandro Di Gioia</authors>
     <owners>Proactima Solutions AS</owners>
     <licenseUrl>https://raw.github.com/proactima/Cyan/master/LICENSE</licenseUrl>
